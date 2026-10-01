@@ -25,7 +25,9 @@ The [N sequence](../development-outline.md#n1-purpose-driven-deployment) owns pr
 | `environment.planDeployment` | query | `{intent}` | `{deploymentPlan}` |
 | `environment.executeDeployment` | command | `{intent, confirmedDigest}` | `{schemaVersion, operation, taskId, correlationId}` |
 
-`intent` is `{purposes, editorRoot}`. Purposes are a nonempty unique array drawn from
+`intent` is `{purposes, editorRoot, useMirrors?}`. The optional `useMirrors` boolean defaults to
+true for older requests and is normalized into returned intent. The desktop Settings preference
+supplies it explicitly. Purposes are a nonempty unique array drawn from
 `desktop_play`, `pico_pcvr`, `pc_avatar`, `quest_avatar`; multiple purposes are supported.
 `editorRoot` is a drive-absolute Windows installation root, 4–240 UTF-8 bytes. Reject device/UNC
 paths, traversal, empty segments, trailing dot/space aliases, reserved DOS device names, control
@@ -46,10 +48,19 @@ acceptance and UI human review remain pending; no existing frozen method changes
 
 ## Plan and observed prerequisites
 
-The plan has `schemaVersion`, normalized `intent`, ordered `steps`, nullable `installer`, `digest` and
-`prerequisitesReady`. A step has `component`, `action`, `reason`, nullable `location`, nullable
-`version` and nullable backend-owned `officialUrl`. Returned URLs are from the family's closed
-official-destination list; the renderer rejects arbitrary destinations.
+The plan has `schemaVersion`, normalized `intent`, ordered `steps`, nullable `installer`, `digest`,
+`prerequisitesReady` and, for creator purposes, `downloadPolicy`. A step has `component`, `action`, `reason`, nullable `location`, nullable
+`version` and nullable backend-owned `officialUrl`. This retained field carries documentation
+and selected download destinations, including the author-selected NoUnityCN Editor page.
+Returned URLs are from the family's closed destination list; the renderer rejects arbitrary destinations.
+
+`downloadPolicy` contains `region` (`china_mainland`, `other`, `unknown`), `mirrorsEnabled`,
+ordered `sources` (`official`, `nounitycn`) and the fixed
+`hubFallbackUrl: "unityhub://2022.3.22f1/887be4894c44"`. Mainland China with mirrors enabled uses
+`[nounitycn, official]`; other/unknown uses `[official, nounitycn]`. Mirrors disabled uses
+`[official]` in every region. The consumer validates the preference, source order and primary
+Editor URL together. The adapter owns the bounded country-category probe; play-only plans do
+not query it. Changing the setting clears displayed consent, including late pending plan replies.
 
 | Purpose | Required observations |
 | --- | --- |
@@ -76,8 +87,9 @@ owns artifact/source, path semantics and account/license handoff. `prerequisites
 all steps retain verified facts. Accounts, SDK/MA package resolution and device behavior are
 not inferred from that boolean.
 
-The digest is SHA-256 over compact serde JSON serialization of the normalized intent and
-ordered steps and nullable installer identity. `installer` has `kind` (`unity_cli`, `hub_cli`,
+The digest is SHA-256 over compact serde JSON serialization of the normalized intent, ordered
+steps, nullable installer identity and nullable download policy, in that order. It binds source
+order and mirror preference to confirmation. `installer` has `kind` (`unity_cli`, `hub_cli`,
 `unity_cli_bootstrap`), `location`, `version`, `fileSha256` and `editorRoot`. Bootstrap identifies a
 reviewed artifact to acquire; other kinds identify an observed executable. The root equals intent;
 the file digest is 64 lowercase hexadecimal characters. Purpose order is normalized; timestamps are excluded. No consumer computes
@@ -110,7 +122,17 @@ mutation boundary. Trust uses Windows Authenticode plus an exact allowlisted Uni
 name, without a shell. Certificate retrieval is cache-only; unavailable trust data refuses
 automation. CLI acquisition verifies pinned size/hash/signature and publishes into an absent managed
 slot without replacement. It makes no PATH/registry writes and refuses redirected ancestors.
-Editor commands use fixed argument arrays, stripped service credentials, bounded output and a
+Standalone Editor installation tries the confirmed source order, downloads the original
+installer into local cache, checks the official MD5 and Unity signature, then installs at the
+confirmed destination. Official acquisition never contacts the mirror. Regional replacement
+redirects and failed file checks advance to the next enabled source. A debug-only process-local
+`VUA_DEV_EDITOR_INSTALLER` reuses a browser
+download with the same checks. The original NSIS installer uses `/S` and a final unquoted
+`/D=` directory. Windows owns any UAC prompt; cancellation takes effect after the installer boundary.
+The installed Editor is inspected and registered with the official CLI's `editors add` command.
+The elevated installer is waited directly rather than supervised through the ordinary Job Object;
+its direct completion and Editor reinspection decide this native step's outcome.
+CLI commands use fixed argument arrays, stripped service credentials, bounded output and a
 two-hour timeout. VUA never changes the shared Unity installation root or active VR runtime.
 Unsupported observations require inspection or an explicit official-tool handoff, never silent
 upgrade, agreement acceptance or authorization. Hub is optional; installer kind selects the exact
@@ -133,7 +155,12 @@ progress so an accepted cancellation does not corrupt task state.
 
 A manual step finishes with warnings and `{outcome:"manual_required", nextStep,
 prerequisitesReady:false, functionalVerification:"not_run"}`. The user completes the upstream
-step, then prepares a fresh plan. Automatic completion requires reinspection of all selected
+step, then prepares a fresh plan. Exhausted Editor sources return that same warning outcome with
+`handoff:"unity_hub"`, `handoffUrl:"unityhub://2022.3.22f1/887be4894c44"` and a `unity_hub` manual
+next step. The panel offers the version-specific Hub link and official Hub download page. No
+Android install follows that handoff, and replay returns the stored result without downloading
+again. Native installer or registration failures retain their ordinary error outcomes.
+Automatic completion requires reinspection of all selected
 prerequisites and returns `{outcome:"prerequisites_verified", prerequisitesReady:true,
 functionalVerification:"not_run"}`. A successful exit code alone never produces that result.
 
@@ -174,6 +201,7 @@ evidence must distinguish synthetic coverage from dated real-machine runs kept l
 
 ## Document changelog
 
+- 0.1 Candidate update (2026-10-01): add mirror preference, consent-bound region/source policy and durable Hub handoff; use native installation, Windows elevation and official CLI registration under install_editor.
 - 0.1 Candidate update (2026-10-01): require structured CLI completion and add bounded vendor-failure guidance; record the regional artifact mismatch.
 - 0.1 Candidate update (2026-09-30): add fixed official CLI acquisition, Hub-independent installation authority and consent-bound executable identity; retain existing frozen methods.
 

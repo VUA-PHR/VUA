@@ -15,6 +15,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # N1: bind user confirmation to installer bytes; already used by the core planner.
 sha2 = "0.11.0"
+# N1 Editor acquisition: compare Unity's published MD5; SHA-256 records local bytes.
+# Owned by the Editor adapter; remove when the upstream manifest replaces MD5.
+md-5 = "=0.10.6"
 # A4 repo subscription face (proposal 026): url parsing for
 # `add_remote_repo` — the vrc-get-vpm Settings API takes a parsed
 # `url::Url`. Same major ("2") as the library's own dependency; owner

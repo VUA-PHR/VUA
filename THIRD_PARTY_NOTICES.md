@@ -15,7 +15,8 @@ The current Rust workspace directly declares the following third-party crates:
 | `rusqlite` | MIT | Orchestrator authoritative-task SQLite adapter |
 | `serde`, `serde_json` | MIT OR Apache-2.0 | serialization |
 | `sha2` | MIT OR Apache-2.0 | content hashing |
-| `windows-sys` | MIT OR Apache-2.0 | Windows Job Object process-tree supervision |
+| `md-5` | MIT OR Apache-2.0 | compare the official Unity Editor manifest checksum |
+| `windows-sys` | MIT OR Apache-2.0 | Windows process supervision and native installer elevation |
 | `jsonschema` | MIT | schema validation in tests |
 
 `rusqlite` enables its `bundled` feature and statically builds SQLite, which is in the public domain.
@@ -32,13 +33,18 @@ licenses such as MPL-2.0, Unicode-3.0, Zlib, and CDLA-Permissive-2.0.
 
 ## Official Unity tools (N1)
 
-Unity CLI and Unity Editor are independently downloaded onto the user’s machine from Unity’s
-official sources. They are proprietary Unity offerings governed by [Unity terms](https://unity.com/legal/terms-of-service)
+Unity CLI is acquired from Unity. Region and the mirror preference select the order of the
+official Unity Editor source and [NoUnityCN](https://www.nounitycn.top/), whose version page and
+published transfer service provide the original Unity installer. Disabled mirrors leave only
+the official source; unsuccessful acquisition offers a Unity Hub installation handoff.
+NoUnityCN's website source is [MIT-licensed](https://github.com/DanKE123abc/NoUnityCN/blob/main/LICENSE);
+VUA's adapter uses its download page and does not bundle its website code. Unity CLI and Editor
+are proprietary Unity offerings governed by [Unity terms](https://unity.com/legal/terms-of-service)
 and [Editor software terms](https://unity.com/legal/editor-terms-of-service/software), not VUA’s
 Apache-2.0 license. VUA does not bundle or mirror these tools or grant a Unity license. Users
 complete authorization, license selection and agreement acceptance through Unity’s own tooling.
-The [deployment direction](docs/architecture/unity-deployment.md) specifies the reviewed artifact
-and verification limits. Unity Hub is optional.
+The [deployment direction](docs/architecture/unity-deployment.md) specifies acquisition, native
+installation and official CLI registration. Unity Hub is optional.
 
 ## Optional external integrations (N2)
 

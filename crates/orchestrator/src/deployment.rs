@@ -8,6 +8,65 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 pub const DEPLOYMENT_SCHEMA: &str = "vua.environment-deployment/v0.1";
+/// Mirror entry selected by the author for N1; policy chooses its priority.
+pub const UNITY_EDITOR_SOURCE: &str =
+    "https://www.nounitycn.top/download?v=unityhub%3A%2F%2F2022.3.22f1%2F887be4894c44";
+pub const UNITY_OFFICIAL_EDITOR_SOURCE: &str =
+    "https://unity.com/releases/editor/whats-new/2022.3.22f1";
+pub const UNITY_HUB_INSTALL_LINK: &str = "unityhub://2022.3.22f1/887be4894c44";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum DownloadRegion {
+    ChinaMainland,
+    Other,
+    #[default]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EditorDownloadSource {
+    Official,
+    Nounitycn,
+}
+
+/// Small, explicit source policy. Region affects priority; the user's setting can
+/// remove the mirror entirely. Unknown region starts with the official source.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct EditorDownloadPolicy {
+    pub region: DownloadRegion,
+    pub mirrors_enabled: bool,
+    pub sources: Vec<EditorDownloadSource>,
+    pub hub_fallback_url: String,
+}
+
+impl EditorDownloadPolicy {
+    pub fn new(region: DownloadRegion, mirrors_enabled: bool) -> Self {
+        let sources = match (region, mirrors_enabled) {
+            (_, false) => vec![EditorDownloadSource::Official],
+            (DownloadRegion::ChinaMainland, true) => vec![
+                EditorDownloadSource::Nounitycn,
+                EditorDownloadSource::Official,
+            ],
+            (_, true) => vec![
+                EditorDownloadSource::Official,
+                EditorDownloadSource::Nounitycn,
+            ],
+        };
+        Self {
+            region,
+            mirrors_enabled,
+            sources,
+            hub_fallback_url: UNITY_HUB_INSTALL_LINK.into(),
+        }
+    }
+}
+
+fn default_mirrors() -> bool {
+    true
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -24,6 +83,9 @@ pub struct DeploymentIntent {
     pub purposes: Vec<DeploymentPurpose>,
     /// An absolute Editor installation root, not a command or executable supplied by UI.
     pub editor_root: String,
+    /// Desktop preference; omission from an older request keeps mirrors enabled.
+    #[serde(default = "default_mirrors")]
+    pub use_mirrors: bool,
 }
 
 impl DeploymentIntent {
@@ -119,7 +181,7 @@ pub struct DeploymentStep {
     pub reason: DeploymentPresence,
     pub location: Option<String>,
     pub version: Option<String>,
-    /// Only backend-owned official HTTPS destinations; opening one is not installation.
+    /// Backend-owned documentation/download destinations; opening one is not installation.
     pub official_url: Option<String>,
 }
 
@@ -135,6 +197,8 @@ pub struct DeploymentPlan {
     /// Identity of the installation authority observed with this plan. Binds consent to
     /// the exact binary, command family and destination, including between component steps.
     pub installer: Option<DeploymentInstaller>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub download_policy: Option<EditorDownloadPolicy>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -159,6 +223,9 @@ pub enum DeploymentInstallerKind {
 /// Infrastructure implements these facts/actions in project-manager. New installers must
 /// not bypass this boundary or change the plan's meanings in React/Electron handlers.
 pub trait DeploymentAdapter: Send + Sync {
+    fn download_region(&self) -> DownloadRegion {
+        DownloadRegion::Unknown
+    }
     fn observe(&self, intent: &DeploymentIntent) -> Vec<DeploymentObservation>;
     fn installer(&self, intent: &DeploymentIntent) -> Option<DeploymentInstaller>;
     fn install(
@@ -173,6 +240,15 @@ pub fn plan_deployment(
     intent: &DeploymentIntent,
     facts: &[DeploymentObservation],
     installer: Option<DeploymentInstaller>,
+) -> Result<DeploymentPlan, &'static str> {
+    plan_deployment_with_region(intent, facts, installer, DownloadRegion::Unknown)
+}
+
+pub fn plan_deployment_with_region(
+    intent: &DeploymentIntent,
+    facts: &[DeploymentObservation],
+    installer: Option<DeploymentInstaller>,
+    region: DownloadRegion,
 ) -> Result<DeploymentPlan, &'static str> {
     intent.validate()?;
     let play = intent.purposes.iter().any(|p| {
@@ -189,6 +265,7 @@ pub fn plan_deployment(
         )
     });
     let quest = intent.purposes.contains(&DeploymentPurpose::QuestAvatar);
+    let download_policy = create.then(|| EditorDownloadPolicy::new(region, intent.use_mirrors));
     let installer = if create { installer } else { None };
     if installer.as_ref().is_some_and(|i| {
         i.location.is_empty()
@@ -230,13 +307,15 @@ pub fn plan_deployment(
                 "https://docs.unity.com/en-us/unity-cli/use-unity-cli",
             )
         };
-        required.extend([
-            installer_component,
-            (
-                "unity_editor",
-                "https://unity.com/releases/editor/whats-new/2022.3.22f1",
-            ),
-        ]);
+        let editor_source = if download_policy
+            .as_ref()
+            .is_some_and(|p| p.sources.first() == Some(&EditorDownloadSource::Nounitycn))
+        {
+            UNITY_EDITOR_SOURCE
+        } else {
+            UNITY_OFFICIAL_EDITOR_SOURCE
+        };
+        required.extend([installer_component, ("unity_editor", editor_source)]);
     }
     if quest {
         required.push((
@@ -294,7 +373,7 @@ pub fn plan_deployment(
     // not make an unchanged plan stale. Canonical purpose ordering avoids incidental drift.
     let mut normalized = intent.clone();
     normalized.purposes.sort();
-    let bytes = serde_json::to_vec(&(&normalized, &steps, &installer))
+    let bytes = serde_json::to_vec(&(&normalized, &steps, &installer, &download_policy))
         .expect("plain deployment values serialize");
     let digest = Sha256::digest(bytes)
         .iter()
@@ -307,6 +386,7 @@ pub fn plan_deployment(
         steps,
         digest,
         installer,
+        download_policy,
     })
 }
 
@@ -341,6 +421,28 @@ pub struct DeploymentService {
 }
 
 struct DeploymentLease(Arc<AtomicBool>);
+
+fn observed_plan(
+    adapter: &dyn DeploymentAdapter,
+    intent: &DeploymentIntent,
+) -> Result<DeploymentPlan, &'static str> {
+    let region = if intent.purposes.iter().any(|p| {
+        matches!(
+            p,
+            DeploymentPurpose::PcAvatar | DeploymentPurpose::QuestAvatar
+        )
+    }) {
+        adapter.download_region()
+    } else {
+        DownloadRegion::Unknown
+    };
+    plan_deployment_with_region(
+        intent,
+        &adapter.observe(intent),
+        adapter.installer(intent),
+        region,
+    )
+}
 impl Drop for DeploymentLease {
     fn drop(&mut self) {
         self.0.store(false, Ordering::Release);
@@ -358,11 +460,7 @@ impl DeploymentService {
 
     pub fn plan(&self, intent: &DeploymentIntent) -> Result<DeploymentPlan, &'static str> {
         intent.validate()?;
-        plan_deployment(
-            intent,
-            &self.adapter.observe(intent),
-            self.adapter.installer(intent),
-        )
+        observed_plan(self.adapter.as_ref(), intent)
     }
 
     pub fn execute(
@@ -398,7 +496,7 @@ impl DeploymentService {
                     return Err(deployment_error("vua.deployment.busy", &correlation));
                 }
                 let _lease = DeploymentLease(active);
-                let fresh = plan_deployment(&intent, &adapter.observe(&intent), adapter.installer(&intent)).map_err(|e| deployment_error(e, &correlation))?;
+                let fresh = observed_plan(adapter.as_ref(), &intent).map_err(|e| deployment_error(e, &correlation))?;
                 confirm_deployment(&fresh, &confirmed).map_err(|e| deployment_error(e, &correlation))?;
                 for (index, step) in fresh.steps.iter().enumerate() {
                     if ctx.check_cancel() { return Ok(TaskExit::Cancelled); }
@@ -413,15 +511,28 @@ impl DeploymentService {
                                 "operation": "environment.executeDeployment", "outcome": "manual_required",
                                 "nextStep": step, "prerequisitesReady": false, "functionalVerification": "not_run"})));
                         },
-                        action => adapter.install(&intent, action, fresh.installer.as_ref().ok_or_else(|| deployment_error("vua.deployment.installer_unavailable", &correlation))?).map_err(|e| deployment_error(e, &correlation)
-                            .with_param("component", crate::ParamValue::Text(step.component.clone())))?,
+                        action => {
+                            let result = adapter.install(&intent, action, fresh.installer.as_ref().ok_or_else(|| deployment_error("vua.deployment.installer_unavailable", &correlation))?);
+                            if result == Err("vua.deployment.hub_fallback_required") && action == DeploymentAction::InstallEditor {
+                                if ctx.check_cancel() { return Ok(TaskExit::Cancelled); }
+                                ctx.warn();
+                                return Ok(TaskExit::Done(serde_json::json!({"schemaVersion": DEPLOYMENT_SCHEMA,
+                                    "operation":"environment.executeDeployment", "outcome":"manual_required",
+                                    "handoff":"unity_hub", "handoffUrl":UNITY_HUB_INSTALL_LINK,
+                                    "nextStep": {"component":"unity_hub", "action":"manual_install", "reason":"missing",
+                                        "location":null, "version":null, "officialUrl":"https://unity.com/download"},
+                                    "prerequisitesReady":false, "functionalVerification":"not_run"})));
+                            }
+                            result.map_err(|e| deployment_error(e, &correlation)
+                                .with_param("component", crate::ParamValue::Text(step.component.clone())))?;
+                        },
                     }
                     // Cancellation arriving during an installer takes effect only after the
                     // adapter returns and has reobserved its output. No implicit rollback.
                     if ctx.check_cancel() { return Ok(TaskExit::Cancelled); }
                     ctx.emit_progress(progress(step, index + 1, fresh.steps.len(), "verified"));
                 }
-                let after = plan_deployment(&intent, &adapter.observe(&intent), adapter.installer(&intent)).map_err(|e| deployment_error(e, &correlation))?;
+                let after = observed_plan(adapter.as_ref(), &intent).map_err(|e| deployment_error(e, &correlation))?;
                 if !after.prerequisites_ready { return Err(deployment_error("vua.deployment.verification_failed", &correlation)); }
                 Ok(TaskExit::Done(serde_json::json!({"schemaVersion": DEPLOYMENT_SCHEMA,
                     "operation": "environment.executeDeployment", "outcome": "prerequisites_verified",
@@ -457,6 +568,12 @@ fn deployment_error(code: &str, correlation: &str) -> AppErrorV1 {
             | "vua.deployment.verification_failed"
             | "vua.deployment.cli_acquisition_failed"
             | "vua.deployment.cli_integrity_failed"
+            | "vua.deployment.editor_download_failed"
+            | "vua.deployment.editor_integrity_failed"
+            | "vua.deployment.editor_source_changed"
+            | "vua.deployment.editor_registration_failed"
+            | "vua.deployment.elevation_required"
+            | "vua.deployment.elevation_declined"
     ) {
         ErrorCategory::ExternalFailure
     } else if matches!(

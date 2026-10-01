@@ -15,6 +15,7 @@ fn intent(purposes: Vec<DeploymentPurpose>) -> DeploymentIntent {
     DeploymentIntent {
         purposes,
         editor_root: r"C:\VUA Test\Editors".into(),
+        use_mirrors: true,
     }
 }
 fn fact(component: &str, presence: DeploymentPresence) -> DeploymentObservation {
@@ -58,6 +59,7 @@ struct FakeAdapter {
     installs: AtomicUsize,
     installer: Mutex<Option<DeploymentInstaller>>,
     fail: bool,
+    hub_fallback: bool,
     boundary: Option<(mpsc::Sender<()>, Mutex<mpsc::Receiver<()>>)>,
 }
 impl FakeAdapter {
@@ -74,6 +76,7 @@ impl FakeAdapter {
             facts: Mutex::new(facts),
             installs: AtomicUsize::new(0),
             fail: false,
+            hub_fallback: false,
             boundary: None,
         }
     }
@@ -103,6 +106,9 @@ impl DeploymentAdapter for FakeAdapter {
         }
         if self.fail {
             return Err("vua.deployment.install_failed");
+        }
+        if self.hub_fallback && action == DeploymentAction::InstallEditor {
+            return Err("vua.deployment.hub_fallback_required");
         }
         let component = match action {
             DeploymentAction::InstallUnityCli => {
@@ -203,6 +209,65 @@ fn canonical_consent_binds_observations_and_refuses_ambiguity() {
 }
 
 #[test]
+fn source_priority_and_mirror_preference_are_visible_and_bound_to_consent() {
+    let mut request = intent(vec![DeploymentPurpose::PcAvatar]);
+    let mainland = plan_deployment_with_region(
+        &request,
+        &creator_facts(),
+        Some(test_installer()),
+        DownloadRegion::ChinaMainland,
+    )
+    .unwrap();
+    assert_eq!(
+        mainland.download_policy.as_ref().unwrap().sources,
+        [
+            EditorDownloadSource::Nounitycn,
+            EditorDownloadSource::Official
+        ]
+    );
+    assert_eq!(
+        mainland.steps[1].official_url.as_deref(),
+        Some(UNITY_EDITOR_SOURCE)
+    );
+    for region in [DownloadRegion::Other, DownloadRegion::Unknown] {
+        let plan =
+            plan_deployment_with_region(&request, &creator_facts(), Some(test_installer()), region)
+                .unwrap();
+        assert_eq!(
+            plan.download_policy.as_ref().unwrap().sources,
+            [
+                EditorDownloadSource::Official,
+                EditorDownloadSource::Nounitycn
+            ]
+        );
+        assert_eq!(
+            plan.steps[1].official_url.as_deref(),
+            Some(UNITY_OFFICIAL_EDITOR_SOURCE)
+        );
+        assert_eq!(
+            confirm_deployment(&plan, &mainland.digest),
+            Err("vua.deployment.plan_changed")
+        );
+    }
+    request.use_mirrors = false;
+    let official_only = plan_deployment_with_region(
+        &request,
+        &creator_facts(),
+        Some(test_installer()),
+        DownloadRegion::ChinaMainland,
+    )
+    .unwrap();
+    let policy = official_only.download_policy.as_ref().unwrap();
+    assert_eq!(policy.sources, [EditorDownloadSource::Official]);
+    assert!(!policy.mirrors_enabled);
+    assert_eq!(policy.hub_fallback_url, UNITY_HUB_INSTALL_LINK);
+    assert_eq!(
+        confirm_deployment(&official_only, &mainland.digest),
+        Err("vua.deployment.plan_changed")
+    );
+}
+
+#[test]
 fn shared_intent_vectors_reject_windows_aliases_and_unbounded_input() {
     let vectors: serde_json::Value = serde_json::from_str(include_str!(
         "../../../schemas/environment-deployment/v0.1/intent-vectors.json"
@@ -265,6 +330,44 @@ fn a_manual_handoff_is_not_a_ready_environment() {
     assert_eq!(result["outcome"], "manual_required");
     assert_eq!(result["prerequisitesReady"], false);
     assert_eq!(adapter.installs.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn exhausted_download_sources_handoff_to_hub_and_replay_does_not_retry() {
+    let (store, runtime) = store_runtime();
+    let mut fake = FakeAdapter::new(creator_facts());
+    fake.hub_fallback = true;
+    let adapter = Arc::new(fake);
+    let service = DeploymentService::new(adapter.clone(), runtime);
+    let plan = service
+        .plan(&intent(vec![DeploymentPurpose::QuestAvatar]))
+        .unwrap();
+    let receipt = service
+        .execute(plan.intent.clone(), &plan.digest, "hub-fallback", "corr")
+        .unwrap();
+    assert_eq!(
+        wait(&service.runtime, &receipt.task_id),
+        TaskState::SucceededWithWarnings
+    );
+    let result = store
+        .task(&receipt.task_id)
+        .unwrap()
+        .unwrap()
+        .result
+        .unwrap();
+    assert_eq!(result["outcome"], "manual_required");
+    assert_eq!(result["handoff"], "unity_hub");
+    assert_eq!(result["handoffUrl"], UNITY_HUB_INSTALL_LINK);
+    assert_eq!(result["prerequisitesReady"], false);
+    assert_eq!(result["functionalVerification"], "not_run");
+    assert_eq!(result["nextStep"]["component"], "unity_hub");
+    // Android installation is not attempted after an Editor download handoff.
+    assert_eq!(adapter.installs.load(Ordering::SeqCst), 1);
+    let replay = service
+        .execute(plan.intent, &plan.digest, "hub-fallback", "corr-replay")
+        .unwrap();
+    assert_eq!(replay.task_id, receipt.task_id);
+    assert_eq!(adapter.installs.load(Ordering::SeqCst), 1);
 }
 
 #[test]

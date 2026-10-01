@@ -1,142 +1,146 @@
-# Unity deployment without Hub
+# Unity Editor deployment
 
-> Document version: 1.1.0
+> Document version: 2.0.0
 > Status: Accepted
 > Last conformance review: 2026-10-01
 
-For people: VUA should install the VRChat-compatible Unity Editor using Unity's official
-standalone CLI. Installing Unity Hub is optional. Users still choose their license, accept
-agreements and complete official account authorization themselves.
+For people: choose Avatar editing, review the version, download order and destination, and let VUA
+download and install the global Unity Editor. Mainland-China download networks start with
+[NoUnityCN](https://www.nounitycn.top/); other networks start with Unity's official source. If a
+source fails, VUA tries the other enabled source, then offers installation through Unity Hub.
+Settings → Environment & paths contains an enabled-by-default mirror switch. Unity's original
+installer performs installation; the official Unity CLI registers the Editor and handles licensing.
 
-For Agents: read the [deployment contract](../protocols/environment-deployment-v0.1.md) for
-wire behavior and the [N1 outcomes](../development-outline.md#n1-purpose-driven-deployment)
-for acceptance. This direction does not claim that Editor installation, licensing or a real
-SDK/MA project has passed. Keep acquisition, installation, licensing and functional checks distinct.
+For Agents: implement and exercise the small path below. Use the
+[deployment contract](../protocols/environment-deployment-v0.1.md) for wire behavior and
+[N1 outcomes](../development-outline.md#n1-purpose-driven-deployment) for acceptance.
+Keep development experiments moving, record concrete results, and fix failures in the owning
+adapter. A source review is supporting work; the deliverable is a working installation.
 
-## User path and implementation ownership
+## First usable path
 
-1. Select PC or Quest Avatar editing. Inspect existing tools and the requested Editor root.
-2. Prefer a supported, Unity-signed Unity CLI. If absent, show a plan to download the reviewed
-   Windows x64 CLI directly from Unity into VUA's local data directory. Check size, SHA-256
-   and Windows Authenticode before publishing or running it. Do not execute an installation script.
-3. After acquiring CLI, generate a fresh plan. This new confirmation authorizes Editor/module
-   installation; the acquisition confirmation alone does not. Existing supported Hub CLI is an
-   optional fallback when no eligible standalone CLI is found.
-4. Install exactly global Unity `2022.3.22f1`, changeset `887be4894c44`. Quest adds Android Build
-   Support, SDK/NDK tools and OpenJDK. Retain existing installations; do not request latest,
-   force replacement, uninstallation or downgrade through this Candidate family.
-5. Guide the user through Unity's own browser authorization and license choice. The official
-   CLI provides `unity auth login` and `unity license activate --personal`; Personal eligibility
-   is the user's decision. Any agreement acceptance must be explicit. VUA does not silently pass
-   `--accept-eula`, select a paid plan or read Unity's stored credentials.
-6. Reinspect Editor identity and modules, then launch a disposable project with actual SDK/MA
-   packages. Installed files, an active license and a working project are separate evidence.
+1. Inspect the selected purposes, existing software, Editor installation root and download region.
+2. Acquire the reviewed official Unity CLI when missing. After acquisition, prepare a fresh plan.
+3. For PC Avatar editing, show the source order for global Windows x64 Unity `2022.3.22f1`,
+   changeset `887be4894c44`. Region and the mirror preference are part of the confirmed plan.
+4. Download the original installer into VUA's local cache. Try each enabled source in the
+   displayed order. Compare Unity's published MD5 and the global Unity signature. Record the
+   local SHA-256 so the acquired bytes can be identified again. If acquisition fails across the
+   enabled sources, finish with a Unity Hub handoff and keep prerequisite readiness false.
+5. Run the original installer at the displayed destination. Windows presents its own UAC prompt
+   when elevated rights are needed. Preserve the unquoted final `/D=` directory argument required
+   by the installer, including installation directories containing spaces.
+6. Inspect the installed `Editor/Unity.exe`, then use the official CLI's `editors add` command
+   to register the installation. Refresh the environment panel from the resulting observations.
+7. Guide the user through official account authorization and license choice, then launch an
+   actual disposable SDK/MA project. These follow installation as separately observable steps.
 
-The Orchestrator owns purpose policy, plan confirmation and durable tasks. Project-manager owns
-[CLI acquisition](../../crates/project-manager/src/unity_cli_bootstrap.rs),
-[installer discovery/commands](../../crates/project-manager/src/unity_install.rs),
-and [Windows installation verification](../../crates/project-manager/src/deployment_adapter.rs).
-The Provider composes these adapters. The renderer only displays validated plans and task facts;
-it cannot provide executable paths, command arguments, download URLs or license acceptance flags.
+For Quest editing, the existing official CLI module path adds Android Build Support, SDK/NDK and
+OpenJDK. The first direct-installer real-machine run concentrates on PC Editor installation;
+exercise module management next against that registered Editor.
 
-## Selected official artifact and path behavior
+## Responsibilities and implementation
 
-The first supported standalone CLI is experimental `1.0.0-beta.11`, Windows x64. Its fixed
-[official manifest](https://public-cdn.cloud.unity3d.com/hub/prod/cli/1.0.0-beta.11/latest.json)
-and executable were checked on 2026-09-30. The adapter pins the source, exact size and digest;
-only the fixed global URL and Unity’s fixed regional CDN URL are accepted for redirects. Both
-serve the same pinned CLI artifact; this does not change the required global Editor distribution.
-Upgrades require a reviewed adapter change. A floating latest pointer is not capability evidence.
-Existing official CLI locations and VUA's managed slot are checked without searching PATH.
-An unsupported/foreign file in the managed slot requires inspection rather than overwrite.
+The Orchestrator owns purpose selection, the visible source/destination, confirmed plans and
+durable tasks. Project-manager owns the concrete download, installer and Editor checks:
 
-The Editor root must match `unity install-path --get`. This setting can be shared with Hub;
-`UNITY_CLI_HOME` only chooses where the CLI executable lives. This increment does not mutate
-the shared Editor root. A mismatch requires the user to review/configure it with the official
-tool and prepare a fresh plan. Explicit, backed-up configuration changes remain N1 follow-up.
+- [Editor acquisition and native installation](../../crates/project-manager/src/unity_editor_install.rs)
+- [Official CLI discovery, registration and module commands](../../crates/project-manager/src/unity_install.rs)
+- [Official CLI acquisition](../../crates/project-manager/src/unity_cli_bootstrap.rs)
+- [Windows composition and reinspection](../../crates/project-manager/src/deployment_adapter.rs)
 
-Each confirmed plan binds the installer kind, executable path, version, binary digest and Editor
-root. Recheck the same authority at mutation boundaries. Acquisition is bounded to ten minutes;
-Editor/module commands are bounded to two hours. Cancellation waits for a safe step boundary;
-there is no promise of OS rollback. Errors remain visible and never become successful readiness.
-Vendor output is bounded and does not enter task logs. Do not start cloud project creation or
-service-account authentication; future local CLI project creation must explicitly disable cloud.
-Installation commands explicitly request JSON and disable proxy request logging. Both the process
-result and the matching command's structured success must pass before filesystem reinspection.
-`INSTALL_FAILED` is an upstream failure, not proof of a particular network or checksum problem.
-Unknown, truncated or contradictory results fail closed; shared vendor log history is never used
-to guess the current task's result.
+The renderer displays the backend plan and task result. Its download-source button opens the
+selected entry; it does not construct installer commands. The existing Candidate `install_editor`
+action now uses this source-policy/native-installer path when its installation authority is the
+standalone CLI. An existing supported Hub CLI keeps its command family.
 
-## Source and policy reasoning
+[ProcessRunner](../../crates/orchestrator/src/process.rs) owns process invocation and the
+Windows-specific NSIS directory tail. On an elevation-required response, it opens the original
+installer through Windows' `runas` mechanism and waits for that process. The elevated process is
+OS-owned rather than captured by the ordinary job/output pipes; installation succeeds after
+the native installer finishes and the target Editor passes reinspection.
 
-Unity documents [standalone installation without Hub](https://docs.unity.com/en-us/unity-cli/unity-cli),
-[official acquisition](https://docs.unity.com/en-us/unity-cli/use-unity-cli),
-[commands](https://docs.unity.com/en-us/unity-cli/unity-cli-reference) and
-[license-command releases](https://docs.unity.com/en-us/unity-cli/release-notes).
-VRChat specifies [global Unity 2022.3.22f1](https://creators.vrchat.com/sdk/upgrade/current-unity-version/).
-The CLI's experimental status requires capability checks and explicit fallback, not a universal
-compatibility promise. Legacy [Hub CLI is deprecated](https://docs.unity.com/en-us/hub/hub-cli-reference).
+## Download entry and original artifact
 
-The chosen route uses Unity's own download/automation tool on the user's machine. VUA does not
-bundle, mirror or relicense Unity CLI/Editor, and the user remains subject to
-[Unity terms](https://unity.com/legal/terms-of-service) and
+The source order follows the author's 2026-10-01 ruling:
+
+| Download-network region | Mirror switch on | Mirror switch off |
+| --- | --- | --- |
+| Mainland China (`CN`) | NoUnityCN → Unity official → Unity Hub | Unity official → Unity Hub |
+| Other or unknown | Unity official → NoUnityCN → Unity Hub | Unity official → Unity Hub |
+
+[RegionProbe](../../crates/project-manager/src/unity_download_region.rs) makes one bounded HTTPS
+request to Cloudflare's public trace endpoint and reads only the country category. This measures
+the current download exit, including a user's proxy, rather than physical residence. Hong Kong
+and Taiwan are outside the mainland category. Only the category is cached in memory for ten
+minutes; IP addresses, trace bodies and location history are not retained. Probe failure gives
+`unknown` and starts with the official source.
+
+The mirror entry is
+[NoUnityCN's exact-version download page](https://www.nounitycn.top/download?v=unityhub%3A%2F%2F2022.3.22f1%2F887be4894c44).
+The adapter reads the fixed target's href from that page and carries the page as its referrer;
+its published `pd.zwc365.com/seturl/` transfer service is the current mirror route. The official
+route directly requests Unity's original download URL. Turning mirrors off excludes requests
+to both NoUnityCN and its transfer service. A verified completed local cache may still be reused.
+The current global Windows artifact is:
+
+- Version / changeset: `2022.3.22f1` / `887be4894c44`.
+- Original filename: `UnitySetup64-2022.3.22f1.exe`.
+- Official manifest MD5: `4b5bcea63f3de8377e69d127d3ce4c1d`.
+- Cache: `environment/unity-editor/2022.3.22f1/` beneath VUA's local data directory.
+
+VUA continues to use the original Unity executable. Source acquisition is a replaceable adapter.
+Improve its retry, routing and
+progress behavior from actual download runs rather than introducing a general mirror framework
+before the first installation works. Regional replacement redirects switch sources before a
+large download begins; invalid file checks also advance to the next source. After all enabled
+sources fail, the task returns `manual_required` with `handoff: "unity_hub"`. The panel offers
+`unityhub://2022.3.22f1/887be4894c44` and the official Hub download page. The deep link opens only
+after the user clicks and confirms the external protocol. The user completes Hub installation,
+then prepares a fresh VUA plan. This is an installation handoff, not an automatic success claim.
+
+In a debug build, `VUA_DEV_EDITOR_INSTALLER` can point to an already downloaded local installer.
+This lets the real Provider/task path reuse a browser download during development, with the same
+file checks. It is a process-local development option, separate from renderer inputs. Release
+builds use the confirmed source policy. Interrupted downloads use uniquely named staging files;
+a completed cache is reused.
+
+## Official tooling and user choices
+
+Unity documents [local command-line installation](https://docs.unity3d.com/2022.3/Documentation/Manual/InstallingUnity.html)
+and [CLI Editor registration](https://docs.unity.com/en-us/unity-cli/unity-cli-reference).
+VRChat specifies the [global production Editor](https://creators.vrchat.com/sdk/upgrade/current-unity-version/).
+Installing from a local file does not require rewriting hosts or impersonating Unity's HTTPS site.
+
+The pinned standalone CLI is Windows x64 `1.0.0-beta.11`, acquired directly from Unity and checked
+by size, SHA-256 and Windows Authenticode. The adapter also verifies the CLI's capabilities and
+configured Editor root before confirmation. This increment keeps the existing shared install-root
+setting; explicit root changes remain a later deployment operation.
+
+Unity tools retain their own [terms](https://unity.com/legal/terms-of-service) and
 [Editor software terms](https://unity.com/legal/editor-terms-of-service/software).
-This is an engineering interpretation of the documented route, not a claim of Unity endorsement
-or a replacement for the user's license conditions. Official authorization can leave the built-in
-registration browser; credentials stay in Unity's own tooling, outside VUA/Agent state.
+VUA downloads them onto the user's machine. It does not include them in its distribution or
+operate its own Unity mirror. Users complete account authorization and choose their license in
+Unity's tooling. VUA does not handle Unity credentials or select a paid license.
 
-## Evidence and open work
+## Real-machine development and next checks
 
-On this workstation, the pinned official CLI passed digest and signature checks and reported
-`1.0.0-beta.11`. Its help exposed Editor installation, module installation, browser login and
-Personal activation. Help is capability evidence, not completed login or license activation.
-Raw downloads and machine observations stay under ignored `_local_real_machine/` directories.
+The official standalone CLI has already been acquired and verified through the real Provider.
+Real Provider trials exercised the NoUnityCN download route. The first obtained a regional
+`2022.3.22f1c1` replacement and rejected it before execution; the next switched routes at the
+redirect boundary without downloading the replacement again. On 2026-10-01, real Provider runs
+with mirrors both enabled and disabled classified the current download exit as `other`. The
+enabled plan used official → NoUnityCN; the disabled plan used official only. Both completed
+with warnings and the exact-version Unity Hub handoff. Native Editor installation remains the
+next step on this machine. Raw downloads and observations stay in ignored
+`_local_real_machine/` directories.
 
-The real Provider subsequently downloaded and verified that artifact, completed acquisition with
-`manual_required`, and produced a fresh plan using `unity_cli` plus automatic `install_editor`,
-without requiring Hub. Executing that fresh plan returned `vua.deployment.install_failed`; the
-following inspection kept prerequisites unready. A separate CLI JSON diagnostic returned exit
-code `6` and upstream error `INSTALL_FAILED`. The official error-level log then identified
-an Editor-file checksum mismatch against the release manifest. The CLI reports that the file
-length matches the server response and suggests stale release data as a possible cause; that
-inference was not evidence of a manifest defect. No permission/terms prompt was reported by the user.
-The initially empty dry-run used the CLI's piped default format. Repeating it with explicit
-`--format json` returned the target and its declared checksum; it did not install the Editor.
-
-## Diagnosing an unexpected Editor download
-
-The 2026-09-30 follow-up established a different artifact at the download destination:
-
-| Observation | Result |
-| --- | --- |
-| Requested global target | `2022.3.22f1`, changeset `887be4894c44` |
-| CLI dry-run checksum | `md5-NGI1YmNlYTYzZjNkZTgzNzdlNjlkMTI3ZDNjZTRjMWQ=`; decoded hex `4b5bcea63f3de8377e69d127d3ce4c1d` |
-| Global download response on this network | HTTP 302 to the same path on `download.unitychina.cn` |
-| Downloaded artifact | 2,829,747,392 bytes; MD5 `9aa1b61f75fc6ad3fe8025bbb7265b64` |
-| Windows signature | Valid signature by Unity's China company; not the reviewed global signer |
-| PE product identity | `Unity 2022.3.22f1c1`; the filename still says `2022.3.22f1` |
-
-The regional response substituted a China-edition installer. This explains this workstation's
-checksum failure without assuming stale release data or a broken CLI verifier. The artifact was
-not executed. Local headers, JSON preflight, hashes and signature evidence are retained under
-ignored `_local_real_machine/n1-editor-integrity/`; no account data is involved.
-
-For a repeat failure, first inspect redirects and artifact identity, then compare the actual hash
-with the declared checksum algorithm. Do not assume every manifest uses SHA-256, trust the filename,
-or treat a valid signature from a different publisher/edition as equivalent. Correct the user's
-download route to the official global artifact, then prepare fresh consent and rerun the official
-CLI with its verification intact. VUA does not change the machine's proxy configuration or disable
-TLS/checksum checks to achieve installation. A manual global-installer fallback would need its own
-reviewed source, integrity, consent and registration path before becoming an automatic adapter.
-
-Automated tests cover Hub-independent planning, fresh consent after bootstrap, installer drift,
-fixed command families, redirect restrictions, untrusted bytes and existing-file preservation.
-Android modules, licensing, SDK/MA project launch and human UI review remain pending. Actual
-installation remains blocked until the exact target can be downloaded with matching official
-metadata and verified identity. Do not skip checksum validation, edit vendor manifests or select a
-newer incompatible Editor to pass acceptance. Synthetic tests cannot close N1.
+After the first installation, record the actual installed version, registration result and
+destination, then run license/project checks and an Android-module attempt. Follow N1's remaining
+play, account-guide, update/removal, configuration and UI scenarios in small increments.
 
 ## Document changelog
 
-- 1.1.0 (2026-10-01): identify the regional China-edition substitution and require explicit structured CLI installation results; document source diagnostics without weakening verification.
-- 1.0.0 (2026-09-30): define the official standalone CLI direction, bounded acquisition/installation slice and separate license/functional evidence.
+- 2.0.0 (2026-10-01): select region-aware official/NoUnityCN priority, an enabled-by-default mirror setting and Unity Hub handoff; implement the original-installer/official-CLI path and a debug local-file option.
+- 1.1.0 (2026-10-01): identify the regional artifact mismatch and require structured CLI installation results.
+- 1.0.0 (2026-09-30): define official standalone CLI acquisition and separate licensing and functional checks.

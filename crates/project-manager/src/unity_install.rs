@@ -11,7 +11,7 @@ use std::{
 };
 use vua_orchestrator::deployment::{
     DeploymentAction, DeploymentInstaller, DeploymentInstallerKind, DeploymentObservation,
-    DeploymentPresence,
+    DeploymentPresence, EditorDownloadPolicy,
 };
 use vua_orchestrator::{ProcessOutcome, ProcessRunner, ProcessSpec};
 
@@ -138,6 +138,8 @@ impl UnityInstallProbe {
         &self,
         action: DeploymentAction,
         confirmed: &DeploymentInstaller,
+        data_root: &Path,
+        download_policy: &EditorDownloadPolicy,
     ) -> Result<(), &'static str> {
         let exe = Path::new(&confirmed.location);
         if self
@@ -146,6 +148,29 @@ impl UnityInstallProbe {
             != Some(confirmed)
         {
             return Err("vua.deployment.plan_changed");
+        }
+        if action == DeploymentAction::InstallEditor
+            && confirmed.kind == DeploymentInstallerKind::UnityCli
+        {
+            let destination = crate::unity_editor_install::install_editor(
+                data_root,
+                &confirmed.editor_root,
+                self.runner.as_ref(),
+                download_policy,
+            )?;
+            // CLI "editors add" takes the Editor application, not the container
+            // directory chosen by the NSIS installer.
+            let application = destination.join("Editor/Unity.exe");
+            let path = application
+                .to_str()
+                .ok_or("vua.deployment.invalid_location")?;
+            let outcome = self.run(
+                exe,
+                &["--no-log-proxy", "--format", "json", "editors", "add", path],
+                120,
+            )?;
+            registration_result(&outcome)?;
+            return Ok(());
         }
         let args = install_args(confirmed.kind, action)?;
         let outcome = self.run(exe, &args, 7200)?;
@@ -198,6 +223,26 @@ fn plain_version(value: &str) -> bool {
         && value
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, b'.' | b'-' | b'+'))
+}
+
+/// Registration is a separate step after the native installer has produced a verified
+/// Editor. A failed registration retains that usable installation for reinspection.
+fn registration_result(outcome: &ProcessOutcome) -> Result<(), &'static str> {
+    let result: serde_json::Value = serde_json::from_str(&outcome.stdout)
+        .map_err(|_| "vua.deployment.editor_registration_failed")?;
+    if !outcome.success()
+        || outcome.truncated
+        || !outcome.process_tree_clean
+        || result.get("success").and_then(serde_json::Value::as_bool) != Some(true)
+        || result.get("command").and_then(serde_json::Value::as_str) != Some("editors")
+        || !result
+            .get("errors")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|errors| errors.is_empty())
+    {
+        return Err("vua.deployment.editor_registration_failed");
+    }
+    Ok(())
 }
 
 /// Consume only the official CLI's structured result, never its free-text diagnostics or
@@ -509,5 +554,36 @@ mod tests {
         let contradictory =
             result(r#"{"success":true,"command":"install","errors":[{"code":"INSTALL_FAILED"}]}"#);
         assert!(cli_install_result(&contradictory, DeploymentAction::InstallEditor).is_err());
+    }
+
+    #[test]
+    fn editor_registration_requires_its_own_complete_result() {
+        // beta.11 returns the command family "editors", including for add.
+        let valid = result(r#"{"success":true,"command":"editors","errors":[]}"#);
+        assert!(registration_result(&valid).is_ok());
+        for stdout in [
+            "",
+            r#"{"success":true,"command":"install","errors":[]}"#,
+            r#"{"success":true,"command":"editors"}"#,
+            r#"{"success":true,"command":"editors","errors":[{"code":"EDITOR_NOT_FOUND"}]}"#,
+        ] {
+            assert!(registration_result(&result(stdout)).is_err());
+        }
+        for failed in [
+            ProcessOutcome {
+                truncated: true,
+                ..valid.clone()
+            },
+            ProcessOutcome {
+                exit_code: Some(6),
+                ..valid.clone()
+            },
+            ProcessOutcome {
+                process_tree_clean: false,
+                ..valid
+            },
+        ] {
+            assert!(registration_result(&failed).is_err());
+        }
     }
 }

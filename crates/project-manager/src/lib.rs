@@ -75,4 +75,6 @@ pub use vua_identity::{
 pub mod deployment_adapter;
 mod deployment_trust;
 mod unity_cli_bootstrap;
+mod unity_download_region;
+mod unity_editor_install;
 mod unity_install;

@@ -1,10 +1,10 @@
 # VUA product boundary
 
 
-> Document version: 2.3.0
+> Document version: 2.4.0
 > Status: Accepted
 > Scope: Entire VUA product
-> Updated: 2026-09-30
+> Updated: 2026-10-01
 > Normative effect: Yes
 
 ## Product definition
@@ -210,9 +210,14 @@ gate derives risk from declared capabilities and behavior.
 
 ## Unity deployment
 
-Use Unity’s official standalone CLI to acquire the exact supported Editor directly on the user’s
-machine; Hub is optional. Do not bundle or mirror Unity CLI/Editor. Users choose licenses and
-accept agreements themselves, and Unity’s tooling keeps its own credentials. The
+For N1, detect the download-network region first: mainland China prefers NoUnityCN; other or
+unknown regions prefer Unity's official source (user ruling, 2026-10-01). Try the other enabled
+source if acquisition fails, then guide installation through Unity Hub. Settings includes an
+enabled-by-default mirror switch; when off, use only the official source and Hub fallback.
+Download the exact supported global Editor onto the user's machine, install it with Unity's
+original installer, and register it with the official standalone CLI. Hub is optional until a
+fallback is needed. VUA does not bundle Unity CLI/Editor or operate its own Unity mirror. Users choose
+licenses and accept agreements themselves, and Unity's tooling keeps its own credentials. The
 [deployment direction](architecture/unity-deployment.md) owns the installation and evidence path;
 this does not widen first-delivery account storage or authentication automation.
 
@@ -411,6 +416,7 @@ plugin execution and a marketplace still require their separately accepted secur
 
 ## Document changelog
 
+- 2.4.0 (2026-10-01): select region-aware Unity/NoUnityCN source priority, a mirror switch and Hub fallback; authorize original-installer deployment with official CLI registration during N1 development.
 - 2.3.0 (2026-09-30): select official standalone Unity CLI installation with separate user licensing; Hub is optional.
 
 - 2.2.2 (2026-09-30): link the independent product-release numbering policy; N acceptance scope is unchanged.

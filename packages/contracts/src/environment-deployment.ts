@@ -1,11 +1,19 @@
 /** Deployment v0.1: user intent and backend facts. No shell text or executable supplied by UI.
  * This family extends the existing Gateway envelope; frozen environment inspection is unchanged. */
 export const DEPLOYMENT_SCHEMA = "vua.environment-deployment/v0.1" as const;
+export const UNITY_HUB_INSTALL_LINK = "unityhub://2022.3.22f1/887be4894c44" as const;
 export const DEPLOYMENT_PURPOSES = ["desktop_play", "pico_pcvr", "pc_avatar", "quest_avatar"] as const;
 export type DeploymentPurpose = typeof DEPLOYMENT_PURPOSES[number];
 export interface DeploymentIntent {
   readonly purposes: readonly DeploymentPurpose[];
   readonly editorRoot: string;
+  readonly useMirrors?: boolean;
+}
+export interface EditorDownloadPolicy {
+  readonly region: "china_mainland" | "other" | "unknown";
+  readonly mirrorsEnabled: boolean;
+  readonly sources: readonly ("official" | "nounitycn")[];
+  readonly hubFallbackUrl: typeof UNITY_HUB_INSTALL_LINK;
 }
 export type DeploymentPresence = "verified" | "missing" | "unsuitable" | "detection_failed";
 export interface DeploymentStep {
@@ -23,6 +31,7 @@ export interface DeploymentPlan {
   readonly digest: string;
   readonly prerequisitesReady: boolean;
   readonly installer: DeploymentInstaller | null;
+  readonly downloadPolicy?: EditorDownloadPolicy;
 }
 export interface DeploymentInstaller {
   readonly kind: "unity_cli" | "hub_cli" | "unity_cli_bootstrap";
@@ -56,7 +65,8 @@ function keys(v: Record<string, unknown>, expected: readonly string[]): boolean 
 /** Closed user intent. Windows aliases are refused before a request crosses the Gateway;
  * the adapter additionally checks actual filesystem ancestors before an automatic write. */
 export function isDeploymentIntent(v: unknown): v is DeploymentIntent {
-  return record(v) && keys(v, ["purposes", "editorRoot"]) && Array.isArray(v.purposes)
+  return record(v) && keys(v, Object.hasOwn(v, "useMirrors") ? ["purposes", "editorRoot", "useMirrors"] : ["purposes", "editorRoot"])
+    && (!Object.hasOwn(v, "useMirrors") || typeof v.useMirrors === "boolean") && Array.isArray(v.purposes)
     && v.purposes.length >= 1 && v.purposes.length <= 4 && new Set(v.purposes).size === v.purposes.length
     && v.purposes.every(p => DEPLOYMENT_PURPOSES.some(allowed => p === allowed))
     && typeof v.editorRoot === "string" && new TextEncoder().encode(v.editorRoot).length <= 240
@@ -81,12 +91,15 @@ export function isDeploymentAccepted(v: unknown): v is DeploymentAccepted {
     && typeof v.taskId === "string" && v.taskId.length > 0
     && typeof v.correlationId === "string" && v.correlationId.length > 0;
 }
-/** Validate returned facts and official destinations; the UI never manufactures a ready plan. */
+/** Validate returned facts and selected destinations; the UI never manufactures a ready plan. */
 export function isDeploymentPlanResult(v: unknown): v is DeploymentPlanResult {
   if (!record(v) || !keys(v, ["deploymentPlan"]) || !record(v.deploymentPlan)) return false;
   const p = v.deploymentPlan;
-  return keys(p, ["schemaVersion", "intent", "steps", "digest", "prerequisitesReady", "installer"])
+  const expectedKeys = ["schemaVersion", "intent", "steps", "digest", "prerequisitesReady", "installer"];
+  if (Object.hasOwn(p, "downloadPolicy")) expectedKeys.push("downloadPolicy");
+  return keys(p, expectedKeys)
     && p.schemaVersion === DEPLOYMENT_SCHEMA && isDeploymentIntent(p.intent)
+    && (!Object.hasOwn(p, "downloadPolicy") || validDownloadPolicy(p.downloadPolicy, p.intent))
     && typeof p.digest === "string" && /^[0-9a-f]{64}$/.test(p.digest)
     && (p.installer === null || (record(p.installer) && keys(p.installer, ["kind", "location", "version", "fileSha256", "editorRoot"])
       && ["unity_cli", "hub_cli", "unity_cli_bootstrap"].includes(String(p.installer.kind)) && typeof p.installer.location === "string" && p.installer.location.length > 0
@@ -107,13 +120,28 @@ export function isDeploymentPlanResult(v: unknown): v is DeploymentPlanResult {
         && record(p.installer) && ["unity_cli", "hub_cli"].includes(String(p.installer.kind))
         && s.component === (s.action === "install_editor" ? "unity_editor" : "android_modules")))
       && (s.location === null || typeof s.location === "string") && (s.version === null || typeof s.version === "string")
-      && (s.officialUrl === null || (typeof s.officialUrl === "string" && OFFICIAL_DESTINATIONS.includes(s.officialUrl))));
+      && (s.component !== "unity_editor" || !record(p.downloadPolicy)
+        || s.officialUrl === (p.downloadPolicy.region === "china_mainland" && p.downloadPolicy.mirrorsEnabled === true ? MIRROR_EDITOR_ENTRY : OFFICIAL_EDITOR_ENTRY))
+      && (s.officialUrl === null || (typeof s.officialUrl === "string" && ALLOWED_DESTINATIONS.includes(s.officialUrl))));
+}
+
+function validDownloadPolicy(v: unknown, intent: DeploymentIntent): v is EditorDownloadPolicy {
+  if (!record(v) || !keys(v, ["region", "mirrorsEnabled", "sources", "hubFallbackUrl"])) return false;
+  if (!["china_mainland", "other", "unknown"].includes(String(v.region))
+    || typeof v.mirrorsEnabled !== "boolean" || v.mirrorsEnabled !== (intent.useMirrors !== false)
+    || v.hubFallbackUrl !== UNITY_HUB_INSTALL_LINK || !Array.isArray(v.sources)) return false;
+  const expected = !v.mirrorsEnabled ? ["official"] : v.region === "china_mainland" ? ["nounitycn", "official"] : ["official", "nounitycn"];
+  const sources = v.sources;
+  return sources.length === expected.length && expected.every((source, index) => sources[index] === source);
 }
 
 // The consumer rejects arbitrary Provider URLs. Destinations belong to this closed family.
-const OFFICIAL_DESTINATIONS = [
+const MIRROR_EDITOR_ENTRY = "https://www.nounitycn.top/download?v=unityhub%3A%2F%2F2022.3.22f1%2F887be4894c44";
+const OFFICIAL_EDITOR_ENTRY = "https://unity.com/releases/editor/whats-new/2022.3.22f1";
+const ALLOWED_DESTINATIONS = [
+  MIRROR_EDITOR_ENTRY, OFFICIAL_EDITOR_ENTRY,
   "https://store.steampowered.com/about/", "https://store.steampowered.com/app/438100/",
   "https://store.steampowered.com/app/250820/", "https://www.picoxr.com/software/pico-connect",
-  "https://docs.unity.com/en-us/unity-cli/use-unity-cli", "https://unity.com/download", "https://unity.com/releases/editor/whats-new/2022.3.22f1",
+  "https://docs.unity.com/en-us/unity-cli/use-unity-cli", "https://unity.com/download",
   "https://docs.unity.com/en-us/hub/add-modules",
 ];

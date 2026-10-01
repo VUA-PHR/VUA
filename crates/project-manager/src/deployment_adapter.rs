@@ -1,6 +1,7 @@
 //! N1 Windows installation adapter. Vendor executable discovery and command syntax live here.
 //!
-//! Unity's CLI owns Editor downloads, installation and licensing. VUA never edits its global install path,
+//! Region and the mirror preference choose Unity/NoUnityCN priority; the original installer and CLI perform
+//! installation, registration and licensing. VUA never edits its global install path,
 //! changes the VR runtime, invokes a shell, or accepts renderer-supplied commands. An automatic
 //! action requires a trusted Unity-signed CLI, checked capabilities, and the exact confirmed
 //! installation root. Unsupported/deprecated CLI behavior degrades to official UI guidance.
@@ -12,7 +13,8 @@ use std::{
 };
 use vua_orchestrator::deployment::{
     DeploymentAction, DeploymentAdapter, DeploymentInstaller, DeploymentIntent,
-    DeploymentObservation, DeploymentPresence, DeploymentPurpose,
+    DeploymentObservation, DeploymentPresence, DeploymentPurpose, DownloadRegion,
+    EditorDownloadPolicy,
 };
 use vua_orchestrator::{
     EnvironmentEngine, EnvironmentPresence, EnvironmentRoots, ProcessRunner, StdProcessRunner,
@@ -26,6 +28,7 @@ pub struct WindowsDeploymentAdapter {
     engine: EnvironmentEngine,
     install_probe: UnityInstallProbe,
     data_root: PathBuf,
+    region: crate::unity_download_region::RegionProbe,
 }
 
 impl WindowsDeploymentAdapter {
@@ -49,6 +52,7 @@ impl WindowsDeploymentAdapter {
                 cli_candidates,
             },
             data_root,
+            region: crate::unity_download_region::RegionProbe::default(),
         }
     }
 
@@ -111,6 +115,9 @@ fn android_observation(intent: &DeploymentIntent, editor_ready: bool) -> Deploym
 }
 
 impl DeploymentAdapter for WindowsDeploymentAdapter {
+    fn download_region(&self) -> DownloadRegion {
+        self.region.detect()
+    }
     fn observe(&self, intent: &DeploymentIntent) -> Vec<DeploymentObservation> {
         let mut facts: Vec<_> = self
             .engine
@@ -201,7 +208,12 @@ impl DeploymentAdapter for WindowsDeploymentAdapter {
             return Ok(());
         }
         // Installer identity is rechecked while the machine installation lease is held.
-        self.install_probe.install(action, confirmed)?;
+        self.install_probe.install(
+            action,
+            confirmed,
+            &self.data_root,
+            &EditorDownloadPolicy::new(self.region.detect(), intent.use_mirrors),
+        )?;
         let after = self.observe(intent);
         let component = if action == DeploymentAction::InstallEditor {
             "unity_editor"

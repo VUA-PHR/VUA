@@ -1,10 +1,11 @@
 /** N1 presentation only. The Gateway owns plans, execution and task facts. Changing intent
  * invalidates displayed consent; an opened official page never changes readiness locally. */
 import { useEffect, useRef, useState } from "react";
-import { DEPLOYMENT_PURPOSES, isTerminalTaskStateV01, type DeploymentPlan, type DeploymentPurpose, type TaskSnapshotV01 } from "@vua/contracts";
+import { DEPLOYMENT_PURPOSES, UNITY_HUB_INSTALL_LINK, isTerminalTaskStateV01, type DeploymentPlan, type DeploymentPurpose, type TaskSnapshotV01 } from "@vua/contracts";
 import { useGateway } from "../../gateway/index.ts";
 import { strings } from "../../i18n/index.ts";
 import { openExternalUrl } from "../../app/open-external.ts";
+import { useUnityMirrors } from "../../app/unity-download-preference.ts";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
 import type { CheckZone } from "./deployer-model.ts";
@@ -13,6 +14,9 @@ const copy = strings.deployment;
 export function DeploymentPanel({ zone }: { zone: CheckZone }) {
   const gateway = useGateway();
   const port = gateway.environment.deployment;
+  const useMirrors = useUnityMirrors();
+  const mirrorPreference = useRef(useMirrors);
+  mirrorPreference.current = useMirrors;
   const [available, setAvailable] = useState(false);
   const [purposes, setPurposes] = useState<DeploymentPurpose[]>([zone === "create" ? "pc_avatar" : "desktop_play"]);
   const [editorRoot, setEditorRoot] = useState("C:\\Program Files\\Unity\\Hub\\Editor");
@@ -24,6 +28,8 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
   const [step, setStep] = useState<{ component: string; action: DeploymentPlan["steps"][number]["action"]; phase: "started" | "verified" } | null>(null);
   const command = useRef<string | null>(null);
   const active = taskId !== null && (task === null || (!isTerminalTaskStateV01(task.state) && task.recoveryDisposition !== "inspect_required"));
+
+  useEffect(() => { setPlan(null); command.current = null; }, [useMirrors]);
 
   useEffect(() => {
     let alive = true;
@@ -53,7 +59,12 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
   if (port === undefined || !available) return null;
   const replan = async () => {
     setBusy(true); setError(null); setPlan(null); setTask(null); setTaskId(null); setStep(null); command.current = null;
-    try { setPlan(await port.plan({ purposes, editorRoot })); }
+    try {
+      const prepared = await port.plan({ purposes, editorRoot, useMirrors });
+      // Settings may change while the network-region probe is pending. Do not show
+      // a late reply as current consent after the preference has changed.
+      if (mirrorPreference.current === useMirrors) setPlan(prepared);
+    }
     catch { setError(copy.planFailed); }
     finally { setBusy(false); }
   };
@@ -88,6 +99,10 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
     <p className="vua-caption">{copy.locationHint}</p>
     <Button disabled={disabled || purposes.length === 0} onClick={() => { void replan(); }}>{busy ? copy.working : copy.plan}</Button>
     {plan !== null ? <>
+      {plan.downloadPolicy !== undefined ? <p className="vua-caption">
+        {copy.downloadRegion}{": "}{copy.downloadRegions[plan.downloadPolicy.region]}<br />
+        {copy.downloadOrder}{": "}{plan.downloadPolicy.sources.map(source => copy.downloadSources[source]).join(" → ")}{" → Unity Hub"}
+      </p> : null}
       <ol>{plan.steps.map(s => <li key={s.component}>
         <strong>{copy.components[s.component as keyof typeof copy.components]}</strong>{": "}{copy.actions[s.action]}
         <p className="vua-caption">{copy.reasons[s.reason]}{s.version === null ? "" : ` (${s.version})`}</p>
@@ -106,7 +121,11 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
       {task.error !== undefined ? <p>{copy.failedHint}<code>{task.error.code}</code></p> : null}
       {task.error?.code === "vua.deployment.vendor_install_failed" ? <p>{copy.vendorInstallFailed}</p> : null}
       {task.error?.code === "vua.deployment.vendor_result_unreadable" ? <p>{copy.vendorResultUnreadable}</p> : null}
-      {outcome === "manual_required" ? <p>{copy.manualRequired}</p> : null}
+      {outcome === "manual_required" && task.result?.handoff === "unity_hub" && task.result?.handoffUrl === UNITY_HUB_INSTALL_LINK ? <>
+        <p>{copy.hubFallback}</p>
+        <Button onClick={() => { void openExternalUrl(UNITY_HUB_INSTALL_LINK); }}>{copy.openHub}</Button>
+        <Button variant="subtle" onClick={() => { void openExternalUrl("https://unity.com/download"); }}>{copy.getHub}</Button>
+      </> : outcome === "manual_required" ? <p>{copy.manualRequired}</p> : null}
       {outcome === "prerequisites_verified" ? <p>{copy.verified}</p> : null}
       {active && !task.cancellationRequested ? <Button disabled={busy} onClick={() => {
         setBusy(true); void port.cancel(task.taskId, task.revision).catch(() => setError(copy.cancelFailed)).finally(() => setBusy(false));

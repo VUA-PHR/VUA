@@ -19,5 +19,8 @@
   {"name":"reserved superscript serial device","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\COM¹"}},
   {"name":"alternate data stream","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors:stream"}},
   {"name":"Unicode control character","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors\u0085"}},
-  {"name":"wildcard","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editor*"}}
+  {"name":"wildcard","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editor*"}},
+  {"name":"mirror explicitly enabled","valid":true,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors","useMirrors":true}},
+  {"name":"mirror explicitly disabled","valid":true,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors","useMirrors":false}},
+  {"name":"mirror preference must be boolean","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors","useMirrors":"off"}}
 ]
