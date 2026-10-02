@@ -1,12 +1,15 @@
-# Project context — compatibility route
+# Project context — cold-start primer
 
-> Document version: 3.0.0
+> Document version: 3.0.1
 > Status: Accepted
-> Scope: Navigation only; no independent policy or completion claims
+> Scope: Cold-start pointer for fresh checkouts and worktrees; no independent policy or completion claims
 
-Start with the [documentation guide](README.md). Read the [N sequence](development-outline.md)
-for outcomes, [product boundary](product-boundary.md) for scope and [system map](architecture/system.md)
-for responsibilities. The previous cold-start primer is preserved in Git history; its duplicated
+This file is the tracked cold-start primer: it gives a fresh checkout or worktree one obvious
+first document and owns no policy itself. It is tracked deliberately per the 2026-09-21 U15
+ruling (see the note in `.gitignore`).
+
+Start with the [documentation guide](README.md); it routes every reader and task to the owning
+document. The previous cold-start primer is preserved in Git history; its duplicated
 policy and old status descriptions no longer form a second source of truth.
 
 Collab is retired. [Its archive](archive/2026-09-29/README.md) preserves decision provenance;
@@ -14,4 +17,5 @@ ordinary work follows [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Document changelog
 
+- 3.0.1 (2026-10-01): correct the title left over from the compatibility route, state the tracked cold-start primer purpose, and drop the remaining route restatements in favor of the documentation guide.
 - 3.0.0 (2026-09-29): replace duplicated policy/status with direct routes to current owners.

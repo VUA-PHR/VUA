@@ -16,6 +16,16 @@
 > evidence body persistence lives in the AMF production persistence domain
 > (shape defined by the core W20 freeze slice)
 > Updated: 2026-09-08
+> Erratum (2026-10-02): stale citations repaired.
+> (1) "Boundary with BDL" cited "BDL (bdl v0.1)" — no document by that name
+> exists; the BDL persistent-format family's current document is
+> [bdl-dependency-observations-v0.2.md](bdl-dependency-observations-v0.2.md)
+> (format v0.2 over `schemas/bdl/`; v0.1 survives as the v0.1→v0.2 migration
+> base).
+> (2) "Stable error codes" cited "bdl-commands v0.3" as a live carrier —
+> v0.3 is superseded ([superseded/bdl-commands-v0.3.md](superseded/bdl-commands-v0.3.md));
+> the current version is [bdl-commands-v0.4.md](bdl-commands-v0.4.md).
+> Protocol version and normative content unchanged.
 
 ## Semantics
 
@@ -52,7 +62,10 @@
 
 ## Boundary with BDL
 
-BDL (bdl v0.1) does not store production evidence — its admission rule is
+BDL (the persistent format — currently v0.2, see
+[bdl-dependency-observations-v0.2.md](bdl-dependency-observations-v0.2.md);
+formerly cited as "bdl v0.1", an unresolvable reference — Erratum 2026-10-02)
+does not store production evidence — its admission rule is
 material-acquisition observation facts (data-side stance ① in proposal 011).
 Evidence body persistence lives in the AMF production persistence domain
 (shape lands with the W20 implementation slice).
@@ -60,5 +73,7 @@ Evidence body persistence lives in the AMF production persistence domain
 ## Stable error codes
 
 This protocol has no command face and adds no error codes; a producer's
-failure semantics travel its own command/task protocol (bdl-commands v0.3,
+failure semantics travel its own command/task protocol (bdl-commands —
+currently [v0.4](bdl-commands-v0.4.md); the citation previously read v0.3,
+now superseded — Erratum 2026-10-02,
 production-use-case v0.2, …).

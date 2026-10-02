@@ -4,7 +4,7 @@
 > Document version: 0.2
 > Status: Implementation baseline (handshake frame face frozen as machine-readable schema per proposal 001)
 > Owner: Electron Kernel and Orchestrator Provider adapters
-> Updated: 2026-09-07
+> Updated: 2026-10-02
 > Frame version: `0.1`
 
 ## Boundary and artifact
@@ -62,6 +62,7 @@ mutation must Inspect first and explicitly take over at a higher generation.
 
 ## Document changelog
 
+- 0.2 erratum (2026-10-02): header `Updated` date corrected — it read 2026-09-07, predating the 0.2 erratum (2026-09-28) this document already carried; no content change.
 - 0.2 erratum (2026-09-28): stale lane labels removed — the B10/M10 release-signing sentence now assigns that duty to the N7 installer gate, and the Status header drops the B2 prefix to match the REGISTRY status; protocol version and normative content unchanged.
 - 0.2 (2026-09-07): handshake frame face frozen — request/response JSON Schemas and both-side
   positive/negative vectors landed (proposal 001); a handshake request `payload` must be `null`

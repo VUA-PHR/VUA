@@ -6,11 +6,28 @@
 > tree, desktop consumption awaits shape approval, and the library
 > implementation is the environment implementation-verification slice; until
 > that slice flips the capability the row stays honestly unavailable)**
-> Authority pair: this file and `packages-repo-catalog-v0.1.md` (single meaning, two languages).
+> Sibling disambiguation: THIS file is the `packages.repoCatalog` per-repository
+> inventory face; [packages-repos-catalog-v0.1.md](packages-repos-catalog-v0.1.md)
+> (one more `s`) is the combined v0.1 base spec of `packages.listRepos` AND
+> `packages.packageCatalog` — the two names differ by one letter and are not the
+> same document.
 > Word-face authority: `schemas/packages-repo-catalog/v0.1/` (command + result schemas and the
 > example vectors). This document explains; the schemas bind.
 > Wire route tests: `crates/provider-host/tests/packages_repo_catalog_wire_v01.rs` (the real
 > frame loop); core consumer tests: `crates/provider-host/tests/packages_repo_catalog_consumer_v01.rs`.
+> Erratum (2026-10-02): the header's former "Authority pair … (single meaning, two
+> languages)" line was a bilingual-era leftover that cited this file itself — the
+> Chinese mirror no longer exists and this English file is the sole canonical
+> document per the 2026-09-25 language ruling; the line is replaced by the sibling
+> disambiguation above, and a naming-convention note is added at the serving-gate
+> bullet below. Protocol version and normative content unchanged.
+> Erratum (2026-10-02): the "stays in the W25 window (O-2)" deferral in the
+> Honesty boundary section is reworded to pending/unscheduled — the W25 window
+> is retired (the development outline supersedes the W25 schedule); the
+> walkthrough itself stays open. The remaining W25 mention (the "Explicitly
+> outside" refresh-face bullet) names the completed key-name verification
+> historically and stays intact. Protocol version and normative content
+> unchanged.
 
 ## What this face is
 
@@ -132,7 +149,10 @@ backend has no repo-scale package listing (environment verification 3bd4f12 s1) 
 honestly false.
 
 - **Serving gate (wired, landed)**: the served row `packages.repoCatalogOps` serves the one
-  method (the removeOps/installOps/registerOps/repoOps/createOps one-row precedent); row
+  method (the removeOps/installOps/registerOps/repoOps/createOps one-row precedent; a
+  naming-convention break, registered honestly: the `Ops` suffix elsewhere marks write
+  faces, while this row serves a read-only query — the row name is frozen
+  served-capability vocabulary and stays unchanged); row
   availability = the backend's `repo_catalog_capabilities().repo_catalog` bit — default
   declared-none keeps the row honestly unavailable until the environment
   implementation-verification slice flips it with the VrcGetLib override. The wire route
@@ -199,7 +219,8 @@ Zero end-to-end claims are made: the freeze batch was the word-list layer; the v
 batch put the wire route, the `packages.repoCatalogOps` served row and the envelope assembly
 in tree — desktop consumption still belongs to the per-face upgrade program after shape
 approval, the library implementation to the environment implementation-verification slice
-(a wired backend keeps the row honestly unavailable until that override lands), and
-real-machine walkthrough of the whole chain stays in the W25 window (O-2, awaiting the user).
+(a wired backend keeps the row honestly unavailable until that override lands), and the
+real-machine walkthrough of the whole chain is pending; unscheduled (the W25 window is
+retired).
 The empty state is the final state: empty repos arrays, empty packages arrays, and null
 latest/display/description facts render as designed empties, never as guessed content.

@@ -19,7 +19,12 @@
 > Orchestrator owns application use cases); evidence bodies live in the AMF
 > production persistent domain (W23, `schemas/production-evidence/v0.1/`) —
 > never BDL (011 convergence decision 1).
-> Updated: 2026-09-08
+> Updated: 2026-09-09
+> Erratum (2026-10-02): the Updated date corrected to the freeze date
+> 2026-09-09 (it read 2026-09-08, predating the freeze recorded in the
+> Status line); the tail "Terminology note" section (a bilingual-era
+> glossary of the VPM abbreviation) removed — its term appears nowhere else
+> in this document. Protocol version and normative content unchanged.
 
 ## v0.2 revision (from v0.1)
 
@@ -93,8 +98,3 @@ referenced by identity (`evidenceIds`) — bodies stay in the W23 store.
 (`errors.recipe.*`, `errors.plan.*`, `errors.job.*`, `errors.record.*`).
 Vocabulary-internal not-yet-wired methods answer typed `unavailable`, never
 a silent stub.
-
-## Terminology note (user ruling 2026-09-08)
-
-VPM = VRChat Package Manager; "VPM 包" = VPM package (the managed package).
-This document uses the ruled forms throughout.

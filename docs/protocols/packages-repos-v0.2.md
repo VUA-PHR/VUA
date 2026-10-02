@@ -33,9 +33,22 @@
 > Updated: 2026-09-21 (v0.2.1 wiring batch: the packages.listRepos
 > negotiation route arm landed — WORD FACE ZERO CHANGE, this document
 > version records the route landing only. Previous: 2026-09-20 v0.2 freeze
-> batch: dual schemas + vectors + core consumer tests + TS face + bilingual
-> protocol doc + REGISTRY; the command face is byte-for-byte the frozen
+> batch: dual schemas + vectors + core consumer tests + TS face + protocol
+> document + REGISTRY; the command face is byte-for-byte the frozen
 > v0.1 face, zero change)
+> Erratum (2026-10-02): bilingual-era wording removed from the Updated lines
+> (the EN mirror no longer exists; this English file is the sole canonical
+> document per the 2026-09-25 language ruling). The v0.1 base spec of this
+> family is [packages-repos-catalog-v0.1.md](packages-repos-catalog-v0.1.md)
+> (named here for the first time — this increment previously cited only its
+> schema directory). Protocol version and normative content unchanged.
+> Erratum (2026-10-02): the closing "stays W25 (O-2)" deferral is reworded
+> to pending/unscheduled — the W25 window is retired (the development
+> outline supersedes the W25 schedule); the walkthrough itself stays open.
+> The other W25 mention in this document (the read-only evidence record
+> ruling (c)) is the historical name of the completed 2026-09-20
+> verification and stays intact. Protocol version and normative content
+> unchanged.
 
 ## INCREMENT SEMANTICS (the v0.1 word list is never revised in place)
 
@@ -116,6 +129,6 @@ wiring batch — against FAKE backends in the wire tests; the VrcGetLib state
 projection waits for the environment implementation-verification slice —
 until then real backends honestly keep answering the v0.1 family; the
 desktop toggle rendering waits for shape approval); the real-machine
-walkthrough stays W25 (O-2). Frozen in the same batch as packages-ops v0.6:
+walkthrough is pending; unscheduled (the W25 window is retired). Frozen in the same batch as packages-ops v0.6:
 the write face and its read-back bit deliver as one — without the read-back
 bit the toggle face could not be consumed honestly.

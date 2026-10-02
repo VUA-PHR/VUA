@@ -9,7 +9,7 @@ delivery: "unscheduled"
 maintainer: "external-upstream"
 distribution: "external-connection"
 platforms: ["windows"]
-capabilities: ["external.project-manager.detect", "external.vpm-registry.read"]
+capabilities: ["external.project-manager.detect", "external.vpm-registry.read", "external.vpm-settings.write"]
 ---
 
 # ALCOM / VCC (VRChat Creator Companion)
@@ -27,8 +27,10 @@ settings (the repository-subscription and local-package-registry faces of `setti
 are one file shared with VCC/ALCOM; VUA reads and writes that face by ruling, with changes
 immediately visible to both sides. All other storage faces such as `vcc.liteDb`, and the
 project files themselves, stay denied (authoritative wording in the
-[product boundary](../../product-boundary.md) 1.5.0 "explicit boundary" section). The
-read face and the settings face have landed with the proposal 024–027 chain (in the
-development window; publication is evaluated separately from N-stage acceptance). The detection matrix and the
+[product boundary](../../product-boundary.md#explicit-boundaries) "Explicit boundaries"
+section; the exception landed in product boundary 1.4.0, 2026-09-19). The read face and
+the settings face have landed in the repository with the proposal 024–027 chain; landing
+is not publication — inclusion in a release is selected separately and evaluated
+independently of N-stage acceptance. The detection matrix and the
 allow/forbidden lists are in the
 [ALCOM/VCC project compatibility matrix](../../compatibility/alcom-vcc.md).

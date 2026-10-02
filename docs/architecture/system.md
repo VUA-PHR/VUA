@@ -1,9 +1,9 @@
 # VUA system architecture
 
-> Document version: 2.1.1
+> Document version: 2.1.3
 > Status: Accepted
 > Scope: Current implementation and incremental code placement
-> Last conformance review: 2026-09-28 (source/layout review, not real-machine acceptance)
+> Last conformance review: 2026-10-01 (source/layout review, not real-machine acceptance)
 > Normative effect: Existing ownership and dependency boundaries; incremental design is in evolution.md
 
 ## Current shape
@@ -106,8 +106,9 @@ facts while avoiding disclosure of account/private material data.
 
 Ordinary single-line development is the only active entry. Collab is retired; its records are in docs/archive/2026-09-29/. Do not bootstrap it or use its BOARD as the active work queue.
 [Protected-main policy](../meta/protected-main.md) remains the repository-wide PR policy.
-The collab:brief script and report-only registry CI are retained; their existence does not
-reactivate collaboration. Use the [N sequence](../development-outline.md) and
+The collab-era registry checker (script and report-only CI) was removed with the mechanism's
+full retirement; REGISTRY consistency is maintained by the governance update rules, not by an
+automated check. Use the [N sequence](../development-outline.md) and
 [contributor workflow](../../CONTRIBUTING.md) for current work.
 
 ## Reading routes
@@ -121,23 +122,27 @@ reactivate collaboration. Use the [N sequence](../development-outline.md) and
 
 ## Initial account and external-tool delivery
 
-N1 account guidance uses the existing Wizard, typed Gateway and isolated desktop browser. The
+N1 account guidance uses the existing renderer features (`features/onboarding` and
+`features/guide`), the typed Gateway and the isolated desktop browser. The
 Orchestrator owns guide progress/handoff semantics; browser storage owns temporary authentication
 state, which does not cross into the application contract. See [desktop browser responsibilities](desktop.md#account-guide-browser)
 and [product scope](../product-boundary.md#account-onboarding-user-ruling-2026-09-30).
 The local guide stores no account credentials and makes no automatic account-verification claim.
 
-N2 connects to independent VRCFT and Space Calibrator installations; upstream owns specialist code,
-hardware modules, drivers, calibration and updates. Existing local adapters discover and launch;
-Steam provides library addition/installation and upstream tools retain their own lifecycle.
-See [integration modes](integrations-and-overlays.md#external-integration-modes).
+N2 connects to independent VRCFT and Space Calibrator installations. Existing local adapters
+discover and launch; upstream lifecycle ownership and the external-connection mode are owned by
+[integration modes](integrations-and-overlays.md#external-integration-modes).
 
 ## Document changelog
 
+- 2.1.3 (2026-10-02): record the removal of the collab-era registry checker (script and
+  report-only CI); REGISTRY consistency now rests on the governance update rules alone.
+- 2.1.2 (2026-10-01): name the real renderer features (`features/onboarding`, `features/guide`)
+  instead of a nonexistent Wizard module; link N2 upstream-lifecycle ownership to the integration
+  architecture instead of restating it. Code-layout table re-verified against crate sources
+  (unchanged, including the project-manager row).
 - 2.1.1 (2026-09-30): describe upstream installation and lifecycle directly.
-
 - 2.1.0 (2026-09-30): route account guidance through existing browser and keep N2 tools outside VUA distribution.
-
 - 2.0.0 (2026-09-28): replace contradictory layout/history with the verified six-crate map, single-line entry, and incremental responsibility guidance; preserve prior text in the archive.
 - 1.0.3 (2026-09-28): incoming erratum recorded collab freeze; superseded by the corrected current map.
 - 1.0.2 (2026-09-28): historical two-entry clarification.

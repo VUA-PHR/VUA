@@ -13,6 +13,25 @@
 > DownloadItem), `docs/architecture/bdl.md` (BDL stores only the metadata subset AMF
 > approves for persistence)
 > Updated: 2026-09-06
+> Erratum (2026-10-02): three non-normative corrections.
+> (1) Provenance pointer void: the "F-line port alignment conclusions" section
+> cites `docs/plans/f-reply-to-b4-download-port-alignment.md` — that path is
+> local scratch (`/docs/plans/` is gitignored) and was never committed to
+> this repository; the citation is retained as a historical reference to the
+> 2026-09-06 alignment reply, not a resolvable link.
+> (2) The second "Open items" bullet was misfiled: it records a landed fact,
+> not an open item — the machine-readable JSON Schema landed with the freeze
+> in `schemas/download-events/v0.1/` (`event.schema.json` + `examples/`,
+> verified in-tree), and its bump rule stands. Only the inspection-hooks
+> placeholder stays open.
+> (3) Collab-era lane letters in live text decoded per documentation
+> governance §4: "the F line" (the "F-line port alignment conclusions"
+> heading and its lead sentence) is the desktop line's 2026-09-06
+> download-port alignment reply; "F4" (the capability bullet in that
+> section) is the desktop download-port implementation; "B4" (the Scope
+> line and the first Open items bullet) is the material acquisition and
+> BDL domain, as the Scope line's own parenthetical already spells out.
+> Protocol version and normative content unchanged.
 
 ## Event flow and ownership
 
@@ -160,9 +179,10 @@ the freeze merges these conclusions:
 
 - Inspection hooks (archive content scanning etc.) are defined as an interface
   placeholder; B4 implements only the minimal size/type/digest set;
-- The machine-readable JSON Schema for event payloads landed with the freeze in
+- ~~The machine-readable JSON Schema for event payloads landed with the freeze in
   `schemas/download-events/v0.1/` (`event.schema.json` + `examples/`); vocabulary or
-  field changes must bump the version, never rewrite in place.
+  field changes must bump the version, never rewrite in place.~~ **(misfiled —
+  this records a landed fact, not an open item; Erratum 2026-10-02)**
 
 The warehouse physical layout is ruled (`docs/decisions/warehouse-layout.md`):
 semantic tree, no deduplication, copy-in + batch import, artifact-mode setting.

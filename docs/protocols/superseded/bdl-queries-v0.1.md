@@ -4,7 +4,8 @@
 > **⚠️ Superseded (2026-09-06)**: availability revised to the dual
 > field (`availabilityRaw` + `availabilityStatus`), filtering switched to the
 > derived stable enum. The current protocol is
-> [bdl-queries-v0.3.md](bdl-queries-v0.3.md); this document remains as
+> [bdl-queries-v0.5.md](../bdl-queries-v0.5.md) (the immediate successor v0.3,
+> and v0.4 after it, are themselves superseded); this document remains as
 > history only, matching `schemas/bdl-queries/v0.1/` (do not edit).
 
 > Document version: 0.1

@@ -1,10 +1,11 @@
 # VUA documentation governance
 
 
-> Document version: 2.4.1
+> Document version: 2.5.1
 > Status: Accepted
-> Source: formalization of §2 of the "VUA documentation and collaboration repair plan"
-> (`docs/plans/docs-governance-reform.md`). The plan itself carries no normative effect;
+> Source: formalization of §2 of the 2026-09 "VUA documentation and collaboration repair plan",
+> a local working plan that was never tracked in git; provenance is preserved in this document's
+> git history (initial version 1.0.0, 2026-09-06). The plan itself carries no normative effect;
 > from acceptance onward this document is the sole authority for document version management.
 
 ## 1. Layers and version rules
@@ -30,9 +31,23 @@ Every managed document uses this uniform header:
 
 ```
 > Document version: x.y.z
-> Status: Draft / Accepted / Frozen / Superseded (→ successor path)
+> Status: Draft / Candidate / Accepted / Frozen / Superseded (→ successor path) / Implementation baseline
 > Last conformance review: YYYY-MM-DD (T4 only)
 ```
+
+Status vocabulary:
+
+- **Draft**: work in progress; carries no normative effect until accepted.
+- **Candidate**: a T2 contract/protocol proposed for adoption whose freeze prerequisites (§2.5)
+  are not yet all met; it may be exercised, but it is not yet a frozen face.
+- **Accepted**: current and normative for what it describes.
+- **Frozen**: a lifecycle state per §2.4 — normative content changes require a Major bump and an
+  explicit unfreeze ruling; T2 contracts are never edited in place.
+- **Superseded**: replaced by a named successor (→ successor path); retained for reference.
+- **Implementation baseline**: the version the current implementation is built and verified
+  against; normative for current behavior, while the document as a whole has not completed the
+  §2.5 freeze prerequisites (individual faces inside it may still be frozen). Current examples:
+  `docs/protocols/material-intake-v0.1.md`, `docs/protocols/provider-process-v0.1.md`.
 
 Single-language canonical documents omit any "authoritative language" line (see §2.3).
 
@@ -98,17 +113,29 @@ markdown table:
 
 Paths refer to the canonical file (single-language per §2.3). Update rules are in §3.
 
+Coverage edges: managed documents are every tracked document under `docs/` **except**
+`docs/archive/` (historical), the immutable Chinese release notes (`docs/release/v0.*.md`), and
+gitignored local scratch (`docs/plans/`, `docs-zh/`). This explicitly includes
+`docs/release/versioning.md`, `docs/tool-catalog/`, and `docs/research/`. At the repository root
+only `AGENTS.md` and `CONTRIBUTING.md` are managed; the other root files (README editions,
+SECURITY.md, TRADEMARKS.md, THIRD_PARTY_NOTICES.md, NOTICE, LICENSE) are versioned by git history
+and deliberately unmanaged. Registered `schemas/` directories are managed through their T2
+versioned paths, not document headers. A managed document added before it carries a full §2.1
+header is registered with its current status and harmonized at its next version bump.
+
 ### 2.7 Traceability
 
 Each product release records its accepted document version matrix (a REGISTRY snapshot) in the
 release notes. N-gate acceptance records cite the document versions reviewed and the release or
 commit actually tested. A gate may span several releases; release numbering and gate completion
-remain independent.
+remain independent. The release-notes matrix rule applies from the next release after
+2026-10-01; existing release notes predate it and, as immutable historical records, are not
+retrofitted.
 
 ## 3. REGISTRY update cadence (event-driven, not per collaboration count)
 
 - **Update triggers** (exactly four): ① a managed document changes Minor/Major version;
-  ② a document changes status (Draft → Accepted → Frozen → Superseded); ③ a new managed
+  ② a document changes status (Draft → Candidate → Accepted → Frozen → Superseded); ③ a new managed
   document is added; ④ review dates are refreshed after an N-gate conformance review.
   **Patch-level edits never touch the REGISTRY**.
 - **Same-batch commits**: a REGISTRY row edit rides along with the document commit that caused
@@ -116,17 +143,18 @@ remain independent.
 - **Expected frequency**: at the current pace, roughly 0–3 single-line edits per day; status
   files, proposal discussions, and similar collaboration actions **never touch** the REGISTRY
   (historical coordination records are no longer maintained).
-- **Drift is prevented by machine checks, not high-frequency human effort**: `collab:brief`
-  (and later CI) verifies that each managed document's header version/status matches its
-  REGISTRY row, and reports any mismatch. Low-cost detection replaces preventive high-frequency
-  updates; a human writes one line only when an event occurs.
+- **Drift is limited by low-frequency rules, not machine checks**: versions are compared at
+  major.minor granularity when a row is updated, tolerating patch drift per the update triggers
+  above. The collab-era checker (`collab:brief` script and report-only CI) was removed with the
+  mechanism's full retirement (2026-10-02); REGISTRY consistency rests on these update rules and
+  review at registration time. A human writes one line only when an event occurs.
 
 ## 4. Reference whitelist for managed-document bodies (2026-09-23, proposal 031-E4)
 
 When the normative body text of a managed document (T0–T5) references a collaboration work
 item, only the following forms are allowed:
 
-- `proposal NNN` (a `collab/proposals/` proposal number);
+- `proposal NNN` (an archived proposal number, `docs/archive/2026-09-29/collab/proposals/`);
 - `U#` (a BOARD "pending user ruling" row number, only when citing an issued ruling);
 - managed-document versions (internal SemVer), protocol/schema versions, product versions.
 
@@ -137,8 +165,17 @@ The following identifiers **must not enter managed documents**: integration batc
 Disposition of existing residue: the G13 references currently present in the
 `docs/protocols/bdl-queries-*` protocol documents and `docs/architecture/bdl_*` are listed
 as a **ride-along cleanup item for the next version bump of those documents**; no freeze face
-is re-versioned just for this. Old identifiers in historical files are never rewritten
-retroactively (see the retired-namespace table in `collab/README.md`).
+is re-versioned just for this. The same ride-along rule covers every other retired-vocabulary
+residue. An **active** (non-frozen) managed document must not carry live collab vocabulary —
+integration batch numbers ("batch N"), worktree numbers (wt-N), BOARD row references
+("BOARD #N"), tick references, week windows used as scheduling state (W25 and the like), or
+bare facet letters (e.g. "029 A4") — and removes such markers at its next version bump; dated
+historical changelog entries may keep them. A **frozen** protocol whose residue acts as a live
+marker (for example "stays with W25 (O-2)" used as a pending state) receives a non-normative
+erratum entry in its changelog instead of a re-version, per the `provider-process-v0.1` 0.2
+erratum precedent; normative content and protocol version stay unchanged. Old identifiers in
+historical files are never rewritten retroactively; retired namespaces are preserved as-is
+under [`docs/archive/2026-09-29/`](../archive/2026-09-29/).
 
 ## 5. Current routes, proposals and archives (2026-09-28)
 
@@ -156,8 +193,8 @@ owners, not copied archive snapshots. Research with implementation consumers nee
 before its constraints are discarded.
 
 Collab is retired and physically archived. The
-[protected-main policy](protected-main.md) continues in force. Keep pnpm collab:brief
-and report-only CI; registry-only checking does not reactivate collab bootstrap. Current decisions
+[protected-main policy](protected-main.md) continues in force. The collab-era registry checker
+was removed with the full retirement; registry hygiene follows §3's update rules. Current decisions
 land in owning documents/PRs, not mandatory BOARD updates.
 
 ## 6. Local environment and reproducible evidence
@@ -183,21 +220,25 @@ defines versions; architecture defines responsibilities; protocols define wire/s
 engineering rules define implementation/evidence safeguards. REGISTRY contains concise metadata,
 not implementation histories. Keep historical claims in archives and Git history.
 
-Collab and old role prompts live under `docs/archive/2026-09-29/`. The two legacy collab entry
-files forward to the archive and current PR policy. No archived prompt is an active instruction.
+Collab and old role prompts live under `docs/archive/2026-09-29/`; the two legacy root `collab/`
+entry stubs were removed on 2026-10-01 and their content is preserved in that archive. No
+archived prompt is an active instruction.
 
 ## Document changelog
 
+- 2.5.1 (2026-10-02): remove the collab-era registry checker (script, CI workflow and the
+  `collab:brief` command) with the mechanism's full retirement; §3 drift control now rests on
+  the update rules and registration-time review.
+- 2.5.0 (2026-10-01): define the Candidate and Implementation baseline statuses (§2.1); define
+  REGISTRY coverage edges (§2.6); state the release-notes matrix rule applies from the next
+  release (§2.7); correct the collab:brief/report-only CI description (§3); extend the §4
+  collab-identifier disposition beyond the bdl residue; repair the repair-plan provenance and
+  the archive pointer; record the removal of the root collab entry stubs.
 - 2.4.1 (2026-09-30): separate release document matrices from N-gate acceptance traceability.
-
 - 2.4.0 (2026-09-30): clarify UI i18n, expandable README languages, English current documentation and preserved source-language examples/history.
-
 - 2.3.0 (2026-09-29): define one-rule-one-owner routes and physical collab archival.
-
-
 - 2.2.0 (2026-09-28): define local inventory versus public test evidence; repair misplaced section insertion.
 - 2.1.0 (2026-09-28): add task routes, current/proposed distinction and evidence-based archival under the collab freeze.
-
 - 2.0.1 (2026-09-28): erratum — M-gate references replaced by N gates following the 2026-09-28
   sequence change (T4 change gate, §2.7 traceability, §3 trigger ④); no rule change.
 - 2.0.0 (2026-09-25): user ruling — language policy flip. Tracked documentation becomes
@@ -210,5 +251,3 @@ files forward to the archive and current PR policy. No archived prompt is an act
   versions / protocol and schema versions / product versions; batch numbers, wt-N, and bare
   facet letters are barred from managed documents; the G13 residue becomes a ride-along
   cleanup item at the next version bump.
-- 1.0.0 (2026-09-06): initial version, formalized from §2 of the documentation and
-  collaboration repair plan.

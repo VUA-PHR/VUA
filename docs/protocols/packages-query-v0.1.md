@@ -17,8 +17,21 @@
 > domain; desktop consumption (PackagesPort P1 projection) = desktop domain
 > (stance ab02215: consumption batch follows the freeze batch, notRun
 > presentation holds until the implementation slice lands)
-> Updated: 2026-09-17 (v0.1 freeze batch: bilingual protocol doc + REGISTRY
+> Updated: 2026-09-17 (v0.1 freeze batch: protocol document + REGISTRY
 > registration)
+> Erratum (2026-10-02): the newest version of this family is
+> [packages-query-v0.2.md](packages-query-v0.2.md) (the additive v0.2 result
+> increment; this v0.1 face stays frozen and served — a backend that has not
+> adopted v0.2 keeps answering the v0.1 family). Bilingual-era wording
+> removed from the Updated line and the freeze close-out list (the EN mirror
+> no longer exists; this English file is the sole canonical document per the
+> 2026-09-25 language ruling). Protocol version and normative content
+> unchanged.
+> Erratum (2026-10-02): the two "due in W25" deferrals (the vcc.liteDb
+> divergence check in the honesty section and the same item in Open items)
+> are reworded to pending/unscheduled — the W25 window is retired (the
+> development outline supersedes the W25 schedule); the check itself stays
+> open. Protocol version and normative content unchanged.
 
 ## P1 read-face semantics (phasing)
 
@@ -53,8 +66,8 @@ unusable entry points are not rendered, and no empty repo list is invented.
   contract guard (`@vua/contracts` packages.listInstalled closed-set
   positive/negative cases); the wire frame-loop test follows with the
   implementation slice;
-- **Bilingual protocol doc + REGISTRY**: this file + EN mirror + two
-  REGISTRY rows (this batch).
+- **Protocol document + REGISTRY**: this file + its REGISTRY registration
+  (this batch).
 
 ## Core rulings (open questions, settled)
 
@@ -69,7 +82,8 @@ unusable entry points are not rendered, and no empty repo list is invented.
    root, different files; a path registered only in liteDb may be invisible
    to the 013 face (vrc-get 0.0.16 source note vpm_settings.rs:25–33 says
    userProjects will migrate away). Actual divergence is a real-machine
-   fact, read-only check due in W25; convergence, if needed, goes through
+   fact, read-only check pending; unscheduled (the W25 window is retired);
+   convergence, if needed, goes through
    a separate 013 version-up proposal (an environment-domain file, **not
    piggybacked on P1**).
 2. **Error-code reuse**: an unregistered projectPath reuses
@@ -175,7 +189,8 @@ in-place rewriting is never allowed.
 - The environment-domain `list_packages` projection slice (displayName, if
   P2 needs it, enters formally with the PackageCollection port upgrade);
 - The read-only real-machine check of vcc.liteDb vs the 013 aggregate
-  registered-set divergence: due in W25 (O-2);
+  registered-set divergence: pending; unscheduled (the W25 window is
+  retired);
 - P2 repo/catalog face: awaits the environment backend-extension proposal
   (the environment stance confirmed pickup-ready); P3 write faces follow
   proposal 013 R5, separate per-face proposals. The end-to-end claim stays

@@ -19,8 +19,23 @@
 > never mutates the snapshot and never predicts the selection outcome;
 > the classification authority is the core `editor_targets` classifier
 > (single classification authority, reused not copied)
-> Updated: 2026-09-13 (v0.1 freeze batch: bilingual protocol document +
+> Updated: 2026-09-13 (v0.1 freeze batch: protocol document +
 > REGISTRY registration + exemption-row removal request)
+> Erratum (2026-10-02): bilingual-era wording removed from the Updated line
+> and the close-out item (5) below (the EN mirror no longer exists; this
+> English file is the sole canonical document per the 2026-09-25 language
+> ruling). Protocol version and normative content unchanged.
+> Erratum (2026-10-02): open-items state refresh — the Desktop U10 settings
+> slice (first Open items bullet) has landed, verified against the code on
+> main: `apps/desktop/src/electron/gateway-router.ts:112` routes
+> `environment.verifyEditor`, and
+> `apps/desktop/src/renderer/features/settings/environment-page.tsx:105`
+> consumes it (result narrowing in `environment-settings-model.ts`). Still
+> open: the real-machine walkthrough (pending; unscheduled — the W25
+> window is retired, see the development outline's supersession note) and
+> the shelved Source field (unchanged candidate). The same W25 retirement
+> applies to the live marker in "Freeze scope and division of labor"
+> below. Protocol version and normative content unchanged.
 
 ## Name mapping (row name vs family name, disambiguation)
 
@@ -54,7 +69,7 @@ primitive traceability, not the row name.
   implementation nails mapping + frame-loop consumer tests (deafe11 +
   adoption bbb6206 + hardening 373470c, accepted into main via a6585c2;
   capabilities declares `environment.verifyEditor = available`);
-- **(5) Bilingual protocol document + REGISTRY row + exemption-removal
+- **(5) Protocol document + REGISTRY row + exemption-removal
   request**: lands with this freeze batch (the `scripts/collab-brief.mjs`
   SCHEMA_EXEMPT `'editor-verify'` row is requested removed by the
   integration role at this batch's acceptance, dffb1e3 precedent; after
@@ -72,8 +87,9 @@ verification-result rendering + gate-3 trust presentation + first-use
 confirmation + choice provenance) belong to the desktop U10 settings
 slice — the core routing batch is accepted, so the desktop start
 condition is ready (proposal 021 sequencing: after the routing batch);
-until it lands no end-to-end claim is made; real-machine walkthrough
-belongs to the W25 real-machine window with evidence requirements not
+until it lands no end-to-end claim is made; the real-machine walkthrough
+is pending, unscheduled (the W25 real-machine window is retired), with
+evidence requirements not
 relaxed. Gate 3 ("one confirmation before first actual use") is the
 execution-release layer, decoupled from this verification face
 (integration ruling: auto-selection handles resolve + present, gate-3
@@ -156,11 +172,16 @@ version; in-place rewrites are forbidden.
 
 ## Open items
 
-- Desktop U10 settings slice (TS face registration + settings UI +
+> Erratum (2026-10-02): the first bullet is closed — see the header Erratum
+> (2026-10-02) for the landed code locations; the W25 framing in the second
+> bullet is retired (window superseded), the item itself stays open.
+
+- ~~Desktop U10 settings slice (TS face registration + settings UI +
   gate-3 presentation and provenance): the core routing batch is
-  accepted; the desktop batch follows (proposal 021 sequencing);
+  accepted; the desktop batch follows (proposal 021 sequencing)~~
+  **(landed — Erratum 2026-10-02)**;
 - Real-machine walkthrough (pick → verify → activate full chain):
-  belongs to the W25 real-machine window;
+  pending; unscheduled (the W25 real-machine window is retired);
 - Source field (`probed`/`user_selected`/`follows_manager`): candidate
   shelved, v0.1 maintained (proposal 021 ruling 2: drafted with a real
   need only when a second real source actually appears).

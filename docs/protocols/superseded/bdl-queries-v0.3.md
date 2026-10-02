@@ -4,8 +4,9 @@
 > **⚠️ Superseded by v0.4 (2026-09-10)**: the completed-download
 > adoption-source read face `downloads.listCompleted` (M6 added scope,
 > proposal 015 §7). The current normative text is
-> [bdl-queries-v0.4.md](../bdl-queries-v0.4.md); this document is kept as
-> history, matching `schemas/bdl-queries/v0.3/` (never rewritten).
+> [bdl-queries-v0.5.md](../bdl-queries-v0.5.md) (v0.4 is itself superseded —
+> now the older generation kept alongside this file); this document is kept
+> as history, matching `schemas/bdl-queries/v0.3/` (never rewritten).
 > Document version: 0.3
 > Status: **Superseded (→ v0.4)** (2026-09-10; original status: Frozen
 > 2026-09-06 — the five v0.3 methods are carried into the v0.4 closed set

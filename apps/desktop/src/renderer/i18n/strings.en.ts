@@ -1653,7 +1653,7 @@ demoTaskTitle: "Demo task",
          * inspection and follow-up production steps are done; missing or
          * out-of-vocabulary state -> rejected as unconfirmable. The backend
          * gate stays the authority; this is the discoverable-reason face
-         * (design standard §5/§179). */
+         * (design standard §5). */
         blockedTitle: "Handoff unavailable",
         blockedFailed:
           "This build failed, so it cannot be handed off. Check the results, recover, or produce again.",

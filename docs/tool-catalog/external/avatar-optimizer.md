@@ -16,7 +16,7 @@ capabilities: ["external.unity-package.detect", "avatar.optimize.plan", "avatar.
 
 
 An Avatar optimizer works as an independent Unity package/upstream tool at the Unity build boundary
-and receives no VUA internal capability. A post-`1.0.0` adapter that plans and invokes its public API
+and receives no VUA internal capability. A post-Beta adapter that plans and invokes its public API
 is classified separately; VUA owns confirmation, Build Record, and validation while upstream owns
 the algorithm. No silent project mutation, copied private implementation, or local estimate
 presented as an official VRChat result.

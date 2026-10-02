@@ -1,6 +1,6 @@
 # VUA workspace instructions
 
-> Document version: 2.1.3
+> Document version: 2.1.4
 > Status: Accepted
 > Authority: Workspace entry; linked owning documents define detailed policy
 
@@ -50,26 +50,22 @@ Drafts and historical records do not override current definitions.
 ## Documentation
 
 Each rule has one owner. Use links for details rather than copying full policies. Follow
-[documentation governance](docs/meta/documentation-governance.md) for versions and REGISTRY.
-Desktop UI uses i18n, initially English, Simplified Chinese, Japanese and Korean, with more languages
-allowed. Tracked docs default to English; release changelogs are Chinese. Root README currently has
-the same four language editions and may expand.
-Local `docs-zh/` mirrors have no normative authority. Frozen contract behavior requires an explicit
-new version. Preserve accepted decisions and historical release artifacts.
+[documentation governance](docs/meta/documentation-governance.md) for versions and REGISTRY; its
+[language policy](docs/meta/documentation-governance.md#23-language-policy-user-ruling-2026-09-25)
+owns UI i18n scope, README editions, documentation languages and the local `docs-zh/` mirrors.
+Frozen contract behavior requires an explicit new version. Preserve accepted decisions and
+historical release artifacts.
 
-## Organizational transfer approval
+## Organizational transfer (historical)
 
-The user completed the rough review and authorized transfer to VUA-Project after the requested
-README and Issue-template corrections (2026-09-29). Preserve repository identity and history,
-merge through PR checks, and verify the new owner and configuration after transfer.
+The transfer to VUA-Project/VUA completed in 2026-09; the authorization, hold release and
+identity-preservation invariants are recorded in [the protected-main policy](docs/meta/protected-main.md).
 
 ## Document changelog
 
+- 2.1.4 (2026-10-01): reconstruct the 2.1.1 changelog entry, link the language policy to governance §2.3 instead of restating it, compress the completed organizational transfer to a historical note, and normalize changelog formatting.
 - 2.1.3 (2026-09-30): route release numbering independently of N delivery-stage acceptance.
-
 - 2.1.2 (2026-09-30): clarify initial four-language UI i18n, expandable README editions and default English documentation.
-
+- 2.1.1 (2026-09-29): replace the pre-transfer review hold with the recorded organizational transfer approval after the completed rough review.
 - 2.1.0 (2026-09-29): clarify Agent reading context and safe handling of accidentally resumed historical workflows.
-
-
 - 2.0.0 (2026-09-29): reduce the entry to routes and essential constraints; archive collab; consolidate existing detailed safeguards. Earlier versions remain in Git history.

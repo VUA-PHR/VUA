@@ -6,6 +6,12 @@
 > Protocol version: 1
 > Updated: 2026-09-02
 > Normative effect: Yes; `schemas/unity-bridge/v1/` is authoritative for machine structure
+> Status note (2026-10-02): the "Accepted" label predates the Frozen status vocabulary — v1 is
+> served under the same never-edit-in-place discipline as the later versions (unity-bridge-v4
+> itself refers to "the v1/v2/v3 frozen files"). The newest frozen version is
+> [unity-bridge-v4.md](unity-bridge-v4.md); per the coexistence rules carried by v2–v4, the
+> material line keeps consuming this v1 face, so v1 is the oldest concurrent face, not a
+> withdrawn one. Protocol content unchanged.
 
 ## Purpose and boundary
 

@@ -1,11 +1,11 @@
 # BDL architecture boundary
 
 
-> Document version: 1.2.4
+> Document version: 1.2.5
 > Status: Accepted
 > Scope: AMF-owned BDL module
-> Updated: 2026-09-23
-> Last conformance review: 2026-09-08
+> Updated: 2026-10-01
+> Last conformance review: 2026-10-01 (source/layout review, not runtime acceptance)
 > Normative effect: Yes
 
 ## Ownership
@@ -100,7 +100,8 @@ pipeline; N5 must trace and exercise that caller path. The existing write-face s
 - **Bookkeeping counter**: every successful write increments
   `bdl_meta.catalog_updated_seq` in the same transaction (first write initializes it to 1).
   `catalog.status` health turns from `unknown` to `ok` accordingly, and the counter travels
-  the wire as `revision.catalogUpdatedSeq` (existing bdl-queries v0.3 semantics).
+  the wire as `revision.catalogUpdatedSeq` (carried by the frozen bdl-queries faces, currently
+  v0.4/v0.5).
 - **Write-face closed sets** (violations are rejected with `InvalidObservation`): identity =
   `booth:<native digits>` with both parts agreeing; `content_hash = sha256:<64 hex>`;
   `observed_at` and `processor_version` are required evidence; price amount/currency are
@@ -109,7 +110,8 @@ pipeline; N5 must trace and exercise that caller path. The existing write-face s
 - **Read-face consumption**: the catalog assembly now consumes the observed columns —
   `title`/`price`/`imageUrl` (always `imageUrls[0]`) and the availability dual field
   (`availabilityRaw` rides along verbatim; `availabilityStatus` is derived at read time per
-  the versioned v0.2 rule table, never stored) reach cards and details; the `catalog.list`
+  the versioned rule table — introduced with bdl-queries v0.2 and carried by the current
+  v0.4/v0.5 faces — never stored) reach cards and details; the `catalog.list`
   text filter = title + productId substring (the protocol surface unchanged). The honest
   empty-state semantics before any observation lands are unchanged.
 - **Scope statement**: this write face serves the products table only.
@@ -145,13 +147,11 @@ experimental and off by default. No runtime acceptance is asserted by this sourc
 
 ## Document changelog
 
+- 1.2.5 (2026-10-01): point the wire-semantics citations at the current frozen bdl-queries
+  v0.4/v0.5 faces instead of the superseded v0.2/v0.3 and refresh header dates; no behavior change.
 - 1.2.4 (2026-09-30): use English for explanatory prose.
-
 - 1.2.3 (2026-09-28): correct storage version and replace old M4 completion claims with N5 audit scope.
-
-
 - 1.2.2 (2026-09-28): remove obsolete mirror metadata and clarify current ownership where needed during the N documentation audit.
-
 - 1.2.1 (2026-09-23): structure aligned with the authoritative ZH edition — the acquisition/BDL
   ownership paragraph moved back to the end of "Responsibilities"; the layering diagram regained
   its own "Layering" section; the condensed adapter paragraph unfolded into a full "External tool

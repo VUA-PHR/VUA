@@ -43,7 +43,7 @@ See [versioning](release/versioning.md).
 
 ## New sequence
 
-| Gate | User task | Initial status |
+| Gate | User task | Status |
 | --- | --- | --- |
 | N1 | Deploy the software and settings needed to play or edit Avatars | Active priority; acceptance pending |
 | N2 | Connect to upstream VRCFaceTracking and hyblocker Space Calibrator | Planned; exactly these two acceptance targets |
@@ -62,7 +62,7 @@ non-blocking defects may remain documented, but an untested required outcome is 
 
 | Environment | Source and use | Evidence limit |
 | --- | --- | --- |
-| Current workstation | User reports SteamVR, PICO Runtime, and VRChat installed, no Unity; first incremental-deployment target | This is a different machine from the earlier development host, not a blank system |
+| Current workstation | User report as of 2026-09-28: SteamVR, PICO Runtime, and VRChat installed, no Unity; first incremental-deployment target. Deployment work actively mutates this machine; re-observe before relying on this row | This is a different machine from the earlier development host, not a blank system |
 | Local uninstall/reinstall | Explicitly authorized by the user for deployment development and testing on this machine | Registry, environment variables, caches, and drivers may remain; never call this a completely clean Windows install |
 | Local Windows VM | Create a fresh Windows VM and retain a pre-install snapshot if available; use for repeatable install/configuration tests | Does not replace physical headset, GPU, runtime, or driver validation; VM availability is not assumed |
 | Separate local project/root | New Unity projects and isolated data/output roots for production and reproduction | Clean project does not mean clean OS |
@@ -100,8 +100,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/real-machine-baselin
 
 The policy option affects only that process. Output is local under `_local_real_machine/`.
 This inventory does not install, launch, or approve any workflow. The existing material_exec_real
-harness is in vua-unity-bridge and can use synthetic inputs or an MA stub; inspect each case's
-actual provenance before using it for N3 acceptance.
+harness is in vua-unity-bridge and can use synthetic inputs or a
+[Modular Avatar](product-boundary.md#production-scope-and-product-rulings-user-ruling-2026-09-22)
+(MA) stub; inspect each case's actual provenance before using it for N3 acceptance.
 
 ## N1: purpose-driven deployment
 
@@ -123,8 +124,8 @@ a general environment version manager are not prerequisites.
 | Network and activation | Guide regional service access and headset activation. Mainland-China suggestions include dedicated accelerators with a no-financial-relationship disclosure and an existing-service/skip choice. Check target-service reachability separately from LAN streaming; exercise headset update, phone login and pairing for the selected Quest activation route |
 
 First local path: keep existing SteamVR/PICO/VRChat, choose PC Avatar editing, install global
-Unity 2022.3.22f1 (China 2022.3.22f1c1 fallback) through the
-[native installer and official CLI](architecture/unity-deployment.md)
+Unity 2022.3.22f1 (China 2022.3.22f1c1 fallback) following the
+[standalone deployment route](architecture/unity-deployment.md)
 (Hub optional), complete user licensing and necessary components, resolve actual SDK/MA dependencies, and open the test
 project. Exercise each declared purpose on an applicable environment; record missing equipment
 as blocked rather than inventing results. WMR may be excluded from first delivery after the
@@ -159,7 +160,8 @@ they are not first-round blockers. N5 BOOTH account-library acceptance remains u
 The acceptance set contains **both and only** these independently distributed tools:
 
 1. [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking): guide installation from
-   [Steam](https://store.steampowered.com/app/3329480/) and hardware-module/OSC setup in the upstream UI.
+   [Steam](https://store.steampowered.com/app/3329480/) and hardware-module/OSC (Open Sound
+   Control) setup in the upstream UI.
 2. [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator): guide
    [Steam installation](https://store.steampowered.com/app/3368750/), device selection and calibration
    in its own UI, retaining the official application's functionality.
@@ -225,7 +227,7 @@ for this gate and remains a user action. N5's complete library work does not blo
 Use N3's complex case for new-project reproduction, repeated application, changed Recipe
 application, missing-then-supplied inputs, and conflict cases. Validate relationships/settings,
 not byte equality of all Unity-generated metadata. Exercise original-package intake and the
-experimental local-VPM route separately; neither proves the other.
+experimental local VPM (VRChat Package Manager) route separately; neither proves the other.
 
 ## N5: audit and redo material management
 
@@ -234,8 +236,9 @@ experimental local-VPM route separately; neither proves the other.
 Before rework, inspect existing implementation, reachable UI/Gateway paths, tests, and local run
 evidence. Produce a capability table with: user action, code entry, reachable/not reachable,
 verified behavior, evidence, missing behavior, and retain/complete/replace decision. Unknown
-means unverified, not absent. Audit local intake, warehouse queries/maintenance, BDL persistence,
-BOOTH account/library enumeration, downloads, and cloud-to-local import end to end where possible.
+means unverified, not absent. Audit local intake, warehouse queries/maintenance, BDL (Booth
+Database Local) persistence, BOOTH account/library enumeration, downloads, and cloud-to-local
+import end to end; record any step that cannot be exercised as blocked with its reason.
 
 The prior M4 closure no longer establishes completion, but the user's initial assessment is not
 proof that all code is missing. Basic loading and SQLite creation alone do not close N5. Preserve
@@ -277,8 +280,8 @@ Do not assume an upstream API or scraping approach before capability investigati
 | Produce | Library selection reaches actual production and records can identify their source inputs |
 
 Use a real local collection containing duplicates, same-name versions, missing files, multi-file
-packages, and dependencies. Define supported directory/archive behavior during the audit; an old
-issue merely being registered is not acceptance. Close the gate only with both acquisition paths
+packages, and dependencies. Define supported directory/archive behavior during the audit; an issue
+merely being recorded is not acceptance. Close the gate only with both acquisition paths
 and library outcomes exercised; remaining non-blocking limitations are named.
 
 ## N6: recovery and environment maintenance
@@ -326,7 +329,7 @@ collaboration mechanism needs a new design and acceptance; these hats do not dis
 
 | Role | Ownership |
 | --- | --- |
-| Integration | N-gate evidence, versions, docs/registry, integration, CI, plan review |
+| Integration | N-gate evidence, versions, docs/registry, cross-module integration evidence, CI, plan review |
 | Desktop | Electron/Main/preload, React UI, typed TS Gateway, actual UI acceptance and guide capture |
 | Core | Application use cases, durable tasks/recovery, domain ports, Provider, application contracts |
 | Production | Unity Bridge, production execution, Unity packages, SDK handoff and real production evidence |
@@ -361,17 +364,19 @@ do not turn documentation completeness, speculative coverage, or idle agent acti
 - 3.6.0 (2026-10-02): expand N1 acceptance to model-first official routes, installation activity,
   device/service accounts and regional activation/connectivity; record the WMR investigation exception.
 
+- 3.5.1 (2026-10-02): describe the N1 first local path as following the standalone deployment
+  route owned by the architecture document instead of restating its install mechanism (the
+  original installer installs the Editor; the official CLI registers it), absorbing the 3.4.1
+  wording hygiene; no acceptance change.
 - 3.5.0 (2026-09-30): make the official standalone CLI the first N1 Editor route, preserving license and real-project acceptance.
-
+- 3.4.1 (2026-10-01): rename the sequence table's status column, date the current-workstation
+  inventory claim and note its mutation by deployment work, replace the N5 audit "where possible"
+  hedge with blocked-with-reason recording, expand first-use jargon (MA/OSC/VPM/BDL), and fix the
+  circular Integration role wording; no acceptance change.
 - 3.4.0 (2026-09-30): decouple N stages from product versions while retaining every delivery outcome and acceptance requirement.
-
 - 3.3.1 (2026-09-30): state the selected external-tool delivery path directly.
-
 - 3.3.0 (2026-09-30): add four-platform guided account acceptance and define Steam installation guidance and upstream external-connection acceptance for N2.
-
 - 3.2.0 (2026-09-29): add human/Agent reading contexts without changing N acceptance or version mapping.
-
-
 - 3.1.0 (2026-09-28): user ruling — the collab mechanism is frozen and unmaintained from the
   N-sequence adoption; ordinary development is the only active entry; roles remain ownership hats.
 - 3.0.0 (2026-09-28): replace M/W scheduling with the user-approved N1-N7 Beta sequence, capability-first N5 rework, exact N2 tools, local reinstall tests, automated non-UI acceptance, and N7 illustrated guide.

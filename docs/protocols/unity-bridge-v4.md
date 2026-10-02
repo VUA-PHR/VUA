@@ -10,6 +10,14 @@
 > Source rulings: user ruling 2026-09-20 (slice/production-nav-bake-preview
 > port slice; no proposal number — the ruling itself is the registering
 > authority)
+> Erratum (2026-10-02): test-count clarification — the changelog's "Rust
+> consumer tests (bridge_v4_vectors, 4 cases)" is the freeze-batch count;
+> `crates/unity-bridge/tests/bridge_v4_vectors.rs` now carries 5 `#[test]`
+> functions, the fifth (`actual_unity_v4_public_exit_receipts_validate`,
+> added 2026-09-21 in a09b3b68) marked `#[ignore]` because it requires
+> local Unity EditMode serialized receipts. So: 4 cases run by default,
+> 1 ignored pending the real-machine window. Protocol version and
+> normative content unchanged.
 
 ## Purpose and boundary
 

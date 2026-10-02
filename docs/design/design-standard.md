@@ -1,23 +1,24 @@
-# VUA design standard v0.7.22
+# VUA design standard v0.7.23
 
 
-> Document version: 0.7.22
+> Document version: 0.7.23
 > Status: Accepted
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-25
+> Updated: 2026-10-01
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
 ## 0. Position of this version
 
-v0.6.1 combines UI/UX and visual-art direction into one normative source.
+This standard merged the UI/UX and visual-art direction documents into one normative source at
+v0.6.1 (the historical merge version); the combined scope continues here.
 
 | Treatment | Content |
 | --- | --- |
-| Retain | goal before terminology, Recipe-first, explicit state, recovery first, honest progress, user-content priority, dark-first, VUA purple/AMF orange jurisdictions, 4 px grid, semantic tokens, workshop-track metaphor, fixed five-tab shell, command-center composition, slanted tab language, transparent overflow flyout, sidebar growth impression, three motion levels, WebGL scene direction (the nebula backdrop scene retired by the 2026-09-25 user ruling; see §7), Recipe graph/list/exploded views, Release coverflow and 3D pedestal, community-skin direction, WCAG 2.2 AA and APG gates |
+| Retain | goal before terminology, Recipe-first, explicit state, recovery first, honest progress, user-content priority, dark-first, VUA purple/AMF orange jurisdictions, 4 px grid, semantic tokens, workshop-track metaphor, the two-business-tab shell with right-pinned Settings and a topbar Guide entry (§3; user rulings 2026-09-25/2026-09-26), command-center composition (the Command Center page itself retired with the home page by the 2026-09-25 user ruling; see §3), slanted tab language, transparent overflow flyout, sidebar growth impression, three motion levels, WebGL scene direction (the nebula backdrop scene retired by the 2026-09-25 user ruling; see §7), Recipe graph/list/exploded views, Release coverflow and 3D pedestal, community-skin direction, WCAG 2.2 AA and APG gates |
 | Standardize | Windows and Fluent 2 desktop behavior; macOS native-tool texture as a visual reference; Carbon as information-structure reference only; global success/warning/error colors while reserving large traffic-light treatments for environment deployment; tokenized motion; transform-only sidebar growth; Electron mechanism + AMF use case for browsing/download; the five AMF stages kept as the full capability coverage (since 0.7.19 a wizard selects the path by goal/device/state — see Recipe-first) |
 | Replace | framework-private Tauri window/IPC semantics, BDB contracts, a separate Production stage, globally disabled context menus, font-size or padding reflow on hover (superseded for the sidebar shell only by the 2026-09-25 user ruling: the idle sidebar rests as small type and hover/focus-within activates it — see §3), deceptive progress floors, paid font or icon assumptions |
-| Schedule separately | Visual direction remains part of v0.6.1. Delivery sequencing, performance gates, and fallback acceptance are reviewed independently from the design decision. |
+| Schedule separately | Visual direction remains part of this standard (merged at v0.6.1). Delivery sequencing, performance gates, and fallback acceptance are reviewed independently from the design decision. |
 
 ## 1. Experience position
 
@@ -75,10 +76,14 @@ are the content; chrome does not obscure them or recolor third-party brands as V
 | Composite keyboard behavior | WAI-ARIA APG |
 | Usability review | Nielsen's ten heuristics |
 
-The shell fixes five primary tabs at the top: **Command Center**, **Environment Deployment**,
-**Game Guide**, **Tool Collection**, and **Avatar Production**. Settings remains at the far right.
-Changing this top-level information architecture requires an explicit product-and-design decision;
-module count alone does not silently rewrite it.
+The shell fixes two business tabs at the top — **Environment** and **Avatar creation** — with
+**Settings** pinned at the far right (a settings area, not a business goal) and **Guide** as a
+topbar entry that opens the pinned overlay window's guide view. The current shape comes from dated
+user rulings: the Command Center home page was retired on 2026-09-25 (its exclusive content was
+decorative; the default landing became Environment), and on 2026-09-26 the Tool Collection merged
+into Environment as its second sidebar group while the Game Guide module retired, its content
+moving to the overlay-hosted guide. Changing this top-level information architecture requires an
+explicit product-and-design decision; module count alone does not silently rewrite it.
 
 Primary tabs retain the original slanted language: the visual shell uses `skewX(-12deg)` while the
 label is counter-skewed, and selected or pressed states read as physical engagement. The responsive
@@ -112,7 +117,10 @@ and task/diagnostic surface. Dialogs are for immediate decisions or high-impact 
 ## 4. Design tokens
 
 Business components use semantic tokens rather than literal colors, shadows, or arbitrary spacing.
-When `packages/design-system` exists, its tokens are a machine-checkable mirror of this section.
+`packages/design-system` (`src/tokens.css`) is the machine-readable mirror of this section's palette
+and typography/spacing tokens; the mirror is maintained manually — the automated check
+(`apps/desktop/scripts/check-contrast.mjs`) verifies the tokens' WCAG contrast ratios, not their
+identity with the tables below.
 
 ### Color
 
@@ -199,7 +207,8 @@ semantically distinct from the dismiss/close ✕ (e.g. a circled exclamation mar
 
 ### 6.2 Experimental feature presentation (v0.6.3)
 
-Experimental features live on the "Settings - Experimental" page (W15 rework form: one card =
+Experimental features live on the "Settings - Experimental" page (the W15 walkthrough rework form
+of 2026-09-08: one card =
 title + subtitle + warning strip + toggle rows). Rules:
 
 - A toggle backed by a frozen protocol (e.g. "Generate VPM replacement" writing
@@ -214,8 +223,9 @@ title + subtitle + warning strip + toggle rows). Rules:
   disabled while its master switch is off);
 - Feature entries carry the "Experimental"/"Danger" badges; the presentation never weakens
   guards, and direct commands are still adjudicated by the versioned protocol;
-- Destructive actions inside an experimental entry keep the danger styling and delayed
-  confirmation (§6.4/§8.1).
+- Destructive actions inside an experimental entry keep the danger styling and the
+  delayed-confirmation discipline for destructive actions (danger color per §4 state colors;
+  high-impact confirmation dialogs per §5).
 
 ## 7. Motion and asset discipline
 
@@ -244,6 +254,11 @@ stable untilted cards.
 
 ## 8. Module visual language
 
+The module rules below are cited in order as §8.1 Command Center, §8.2 Environment,
+§8.3 Warehouse/acquisition, §8.4 Recipe, §8.5 Assembly, §8.6 Inspection/Release,
+§8.7 Projects/packages, §8.8 Overlay, and §8.9 Global shell — the numbering this document's
+changelog history already uses.
+
 - **Command Center:** a sidebar-free constant landing point and the first brand impression. The VUA
   wordmark, holographic core, `Ctrl+P` command entry, four module shortcut cards, and environment
   status band form one composition. The core supports animated/static/off modes and a CSS fallback
@@ -261,10 +276,10 @@ stable untilted cards.
   directly exposed. Unchecked `LocalArtifact` values are pending/quarantined; executables are listed,
   never offered a run action. Animated mode may add a restrained pointer spotlight and tilt to cards;
   all other modes retain stable cards with identical selection, detail, and keyboard behavior.
-  Layout (v0.6.2/W13): the card wall adapts its column count to the window width; the entry detail
+  Layout (v0.6.2, W13 window of 2026-09-07): the card wall adapts its column count to the window width; the entry detail
   is a dedicated right-hand panel (own scroll, sticky header), not a drawer that squeezes the wall;
-  narrow windows stack it below. Artifact-mode semantics (v0.6.3, W15 walkthrough ruling;
-  novice-first): the original UnityPackage is the default; the global behavior is written by the
+  narrow windows stack it below. Artifact-mode semantics (v0.6.3, the W15 walkthrough ruling of
+  2026-09-08; novice-first): the original UnityPackage is the default; the global behavior is written by the
   "Generate VPM replacement" toggle on the Settings-Experimental page (frozen
   warehouse.setGlobalDefaultMode, §6.2), with the effective mode always read back from the
   server; per-entry mode editing and generate/delete entries inside the warehouse entry details
@@ -294,14 +309,16 @@ stable untilted cards.
   under the U9 four-way split, http/https popups open in the current embedded
   view, so no "hand off to the system browser" degradation path exists).
 - **Recipe:** the composing draft is a content dialog inside the recipe page
-  (0.7.12, user ruling 2026-09-20; standalone page since batch 019 B): the
+  (0.7.12, user ruling 2026-09-20; previously a standalone page): the
   project-independent drafting starting point mounts the former "Composing
   draft" page as a dialog behind the recipe page hero entry — draft state lives
   in the container layer (shared across UI roots), so opening or closing the
   dialog never destroys it; the save chain and production chain semantics are
   unchanged.
-- Recipe page as the production hub (0.7.15, U16 user-ruling consumption slice
-  1, proposal 029 A4/A5): the library selection is the preview subject —
+- Recipe page as the production hub (0.7.15, first desktop slice consuming the
+  U16 user ruling of 2026-09-21; archived
+  [proposal 029](../archive/2026-09-29/collab/proposals/029-recipe-driven-workshop-and-project-export.md)
+  facets A4/A5): the library selection is the preview subject —
   selecting a library document loads the three views through the document
   mapping, and the chain identity becomes ready with the selection. The
   selection is a production-chain fact-source action: the chain identity keys
@@ -314,8 +331,9 @@ stable untilted cards.
   previous chain's task/record identities step aside. The selected state offers
   the "assemble" initiation face: the production chain section double-mounts in
   the recipe page selected state and the composing-draft dialog, consuming the
-  same container-layer store and Gateway port (batch 019 C two-UIs-one-store
-  precedent), advancing resolve → plan → approve → execute; plan approval keeps
+  same container-layer store and Gateway port (the two-UIs-one-store precedent of
+  archived [proposal 019](../archive/2026-09-29/collab/proposals/019-multi-ui-shared-layer.md),
+  2026-09-10), advancing resolve → plan → approve → execute; plan approval keeps
   the production-use-case v0.2 plan.approve idempotent wording (request face is
   the single key {planId}); a risk decision is not part of this face (if ever
   needed it is a v0.2→v0.3 version-bump matter for the core freeze ring — the
@@ -324,17 +342,17 @@ stable untilted cards.
   content deviates from the saved revision; a selection-driven chain with no
   draft present is ready. The workshop consumption face is covered in §8.5
   (0.7.16). **Word
-  discipline (#44×U16, codified for the first time)**: the user-action wording
+  discipline (user ruling U16 of 2026-09-21, codified for the first time here)**: the user-action wording
   is "assemble" (组装 — including the chain card's execute button and other
   user-operation copy); "装配" (assembly) is reserved for wardrobe mounting and
   the AMF Assembly stage semantics (stage names, pipeline stage diagrams, and
   stage-event copy do not migrate).
-- Create and add assets (0.7.17, U16 user-ruling consumption slice 3, proposal
-  029 A1/A2/A3 local segment): the recipe page hero main path offers a
+- Create and add assets (0.7.17, third desktop slice consuming the U16 user
+  ruling of 2026-09-21; archived proposal 029 facets A1/A2/A3 local segment): the recipe page hero main path offers a
   "Create" entry (worded 创建 per the U16 ruling text; never mixed with
   "add assets"/"assemble"), opening the composing-draft dialog — the draft
   dialog remains one of the creation starting points and the two-UIs-one-save-
-  chain discipline holds (batch 019 D); creation products enter the recipe
+  chain discipline of proposal 019 holds; creation products enter the recipe
   library and can be selected (save receipts already trigger library
   invalidation refetch, landed in slice 1). The selected state offers an
   "Add assets" action: writing into the selected recipe's asset set rides the
@@ -352,12 +370,12 @@ stable untilted cards.
   marks entries already in the recipe; asset ingestion still uses the two
   existing import paths on the import page (embedded browsing / system pick →
   task center) — no third import entry is created for the recipe page (§8.3
-  discipline holds); cloud asset access (pending item 3 = BOARD #46, linked to
-  proposal 030 / U18) stays honestly absent until a ruling lands — no invented
+  discipline holds); cloud asset access (pending item 3, linked to
+  archived proposal 030 / U18) stays honestly absent until a ruling lands — no invented
   cloud entry; read face absent / empty warehouse / no match render as honest
   empty states.
-- Export a draft from a project (0.7.18, U16 user-ruling B-face loop 4
-  desktop consumption, proposal 029 B4): the recipe page hero action row gains
+- Export a draft from a project (0.7.18, desktop consumption of B-face loop 4
+  under the U16 user ruling of 2026-09-21; archived proposal 029 facet B4): the recipe page hero action row gains
   an "export draft from project" entry (recipe-export v0.1 frozen word-table
   consumption; reverse direction project -> recipe). The pick stage is limited
   to the VUA-registered project set (project.listProjects 013 aggregate
@@ -414,15 +432,15 @@ stable untilted cards.
   workshop remains a core visual investment: assets become parts on a track; carrying, alignment,
   locking, node illumination, missing-dependency confusion, and rollback reversal are driven by real
   task events. Increase spectacle after flow logic stabilizes; scheduling does not delete the direction.
-  Workshop as the execution status face (0.7.16, U16 user-ruling consumption
-  slice 2, proposal 029 A6): the workshop only displays status — the resolve →
+  Workshop as the execution status face (0.7.16, second desktop slice consuming
+  the U16 user ruling of 2026-09-21; archived proposal 029 facet A6): the workshop only displays status — the resolve →
   plan → assembly → record cards of the current chain (consuming the same
   container-layer store, Gateway port, and task-center authoritative snapshots as
   the recipe-page initiation face; plan approval and assembly start happen in the
   recipe page's selected state, the status face takes zero initiation actions and
   keeps only read-style refreshes); with no chain identity this session it renders
-  the honest empty state, and "go to the recipe page" is pure navigation (023
-  projection discipline: zero record identity crosses pages — the workshop fetches
+  the honest empty state, and "go to the recipe page" is pure navigation (proposal
+  023 projection discipline: zero record identity crosses pages — the workshop fetches
   authoritative facts itself); when a task needs handling
   (waitingInput/paused/failed) it points to the task center instead of building a
   second recovery-decision surface in the status face. The replay view is the
@@ -430,7 +448,7 @@ stable untilted cards.
   extends on it and does not start a second presentation system. The material
   direct-chain (production-use-case v0.1) initiation point leaves the workshop and
   lands in the warehouse page's action area (pending item 1's desktop form, ruled
-  by the operator batch 162 on 2026-09-22; zero change to the wire face or the
+  on 2026-09-22; zero change to the wire face or the
   component behavior; the whole section hides honestly while capability is not
   ready) — the material direct chain's semantic origin is the material itself and
   it joins the continuous asset acquisition path (§8.3) on the same page. The
@@ -473,13 +491,15 @@ stable untilted cards.
   (0.7.19).
 - **Projects/packages:** compact tables, fact rows, and capability badges; combined change preview
   before install/update/remove; no third-party branding that implies embedding. Project compatibility
-  no longer holds a standalone second-level page (proposal 026 B, user ruling 2026-09-18): its read
+  no longer holds a standalone second-level page (archived
+  [proposal 026](../archive/2026-09-29/collab/proposals/026-packages-write-face-and-tab-merge.md)
+  facet B, user ruling 2026-09-18): its read
   faces (project detection, note, lock status, environment status, copy-import confirmation chain)
   render as a "Project compatibility" section at the end of the package manager page; the section is
   not gated on the package engine capability. Write-operation handover stays guidance-only: no
   invented interaction without a word face or capability facts.
 
-  Project creation (026 A5) is a single-stage write command without the combined change preview: a
+  Project creation (proposal 026-A5) is a single-stage write command without the combined change preview: a
   brand-new project directory has no pre-existing state to diff and no digest to bind, so the user's
   explicit form submission is the confirmation. The entry is gated on the create capability fact row;
   without the fact it does not render. The form is a parent-folder path input plus a project name
@@ -487,11 +507,13 @@ stable untilted cards.
   after the list refresh); creation is not idempotent, and refusals such as an already-existing
   target directory render inline as they are.
 
-  Template enumeration presentation (027 F5 consumption slice): the create block mounts the
+  Template enumeration presentation (archived
+  [proposal 027](../archive/2026-09-29/collab/proposals/027-packages-discovery-and-usability.md)
+  facet F5 desktop consumption, user ruling 2026-09-19): the create block mounts the
   template enumeration gated on the packages.templatesOps capability fact row
   (packages.listTemplates is an environment-level configuration face, page-locally carried, never
   entering the snapshot) — once the enumeration is ready a template dropdown replaces the manual
-  input: the default option = "use the backend default template (leave empty)" (026 A5 blank-face
+  input: the default option = "use the backend default template (leave empty)" (proposal 026-A5 blank-face
   semantics verbatim), each row displays the name verbatim (= the frozen same-value projection of
   id, never a fabricated friendlier label), and the selected id is passed as-is as the
   packages.createProject template argument. Fall-back discipline: capability-row absence, an empty
@@ -501,7 +523,7 @@ stable untilted cards.
   failures render with the error code verbatim, strictly distinguished from capability absence —
   a failure never masquerades as an empty listing.
 
-  Settings-face copy discipline (027 F1, user ruling U14): UI copy for settings-face operations
+  Settings-face copy discipline (proposal 027-F1, user ruling U14 of 2026-09-19): UI copy for settings-face operations
   such as subscribing and registering local packages states the shared semantics honestly — the
   same package-manager settings file (settings.json) is shared with VCC/ALCOM and changes are
   visible to both sides immediately; VUA does not modify your project files, and external imports
@@ -510,7 +532,7 @@ stable untilted cards.
   contradict the shared implementation; the read-only project-file face and clone-first semantics
   are unchanged.
 
-  Repository discovery presentation (027 F2 consumption slice, IA stance 2 landed): the repository
+  Repository discovery presentation (proposal 027-F2 desktop consumption, IA stance 2 landed): the repository
   subscriptions and repository-subscription-management partitions merge into a single
   "Repositories" partition (a pure presentation-layer restructure; capability fact rows and word
   faces unchanged) — the subscription list rows are the main body, and expanding a row inline is
@@ -527,10 +549,10 @@ stable untilted cards.
   as the display name; typed failures render verbatim (repo_not_found travels untouched) — a
   failure never masquerades as an empty state.
 
-  Installed-packages update awareness presentation (027 F3 consumption slice): the installed
+  Installed-packages update awareness presentation (proposal 027-F3 desktop consumption): the installed
   table gains an "Updatable" column rendering the frozen judgment word face as a three-state
   honest projection — updateAvailable=null (judgment not executed) renders honestly empty with
-  a hover explanation, never "up to date" and never a default false fill (024 stance 2, user
+  a hover explanation, never "up to date" and never a default false fill (proposal 024 stance 2, user
   ruling); false = the precise word face "no strictly newer version under the current filter
   conditions", never generalized into a "no update" assertion; true = renders "update
   available" plus an inline update key (gated on the packages.installOps capability fact row;
@@ -542,12 +564,12 @@ stable untilted cards.
   "cached data" annotation above the table (reusing catalog wording), never a failure — a
   v0.1-family answer never fabricates the annotation.
 
-  Repository lifecycle presentation (027 F4 consumption slice): the subscription rows carry
+  Repository lifecycle presentation (proposal 027-F4 desktop consumption): the subscription rows carry
   inline enable/disable and refresh controls, gated on the packages.repoLifecycleOps
   capability fact row (one row serving the three methods; honestly absent until the
   environment override flips it = controls not rendered while the subscription rows keep
   rendering — degradation is not an error, no fact no render). Honest enable-wording ruling
-  (W25 read-only evidence ruling (c): VCC carries no enable/disable state anywhere): the
+  (the W25 read-only real-machine evidence ruling (c) of 2026-09-20: VCC carries no enable/disable state anywhere): the
   enable bit is VUA-owned state, distinguished from the §8.7 settings-face shared-semantics
   copy discipline — the disabled wording honestly states "a disabled repository stays
   listed while its packages leave browsing and install resolution; the shared VCC/ALCOM
@@ -578,19 +600,20 @@ stable untilted cards.
   update badge appears only for "newer available" — a failed check or up-to-date never disturbs.
   The notification center (header bell) and the bottom taskbar share one notification projection
   — one fact source, two presentations, no diverging invented counts; when the task-engine
-  capability is not ready the entry never appears at all (§2.6 no-fact-no-render, not a disabled
+  capability is not ready the entry never appears at all (§2 "Explicit facts and recovery"
+  no-fact-no-render, not a disabled
   state), and the bell badge equals the active-task count. The panel is a fullscreen frosted
   backdrop plus a solid panel: the header's own backdrop-filter traps fixed descendants, so
   backdrop and panel always portal to body, blur lives only on the fullscreen backdrop and the
   panel itself stays unblurred (the compositing ghosting lesson). Opening moves focus into the
   panel; closing returns it to the bell (not stolen when the user has focused elsewhere);
   outside click / Escape / scrolling outside the panel (scrolling inside the panel's list does
-  not close it — W25 real-machine correction) / blur close it; flattened motion skips the exit
+  not close it — W25 real-machine correction of 2026-09-20) / blur close it; flattened motion skips the exit
   animation window.
   Notification-entry discipline: active tasks show by default; terminal tasks appear only with
   "show completed" enabled and not dismissed. Dismissal is offered only for terminal
   notifications — what is cleared is the notification, not the fact; task authority remains
-  queryable through the task surfaces (§6.2). Task-row titles project honestly: registered task
+  queryable through the task surfaces (§6.1). Task-row titles project honestly: registered task
   identities use their registered title, unregistered tasks get the honest type word
   "background task", and a bare taskId never serves as a description (facts the projection
   cannot reach are not invented). Clicking the row's main area returns to the task's origin page,
@@ -619,8 +642,10 @@ A page is deliverable only when:
 6. reduced-motion and effects-off preserve full operation;
 7. high-impact work shows scope and recovery;
 8. fixtures do not enter production;
-9. 960×600, maximized, 125%/150% DPI, and long Chinese/Japanese/English strings retain key actions;
-10. the fixed five tabs, two-level responsive ladder (2026-09-25), slanted controls, and transparent
+9. 960×600, maximized, 125%/150% DPI, and long Chinese/Japanese/Korean/English strings retain key actions;
+10. the two business tabs (Environment, Avatar creation) with Settings pinned at the far right and
+    Guide as a topbar overlay entry (user rulings 2026-09-25/2026-09-26), the two-level responsive
+    ladder (2026-09-25), slanted controls, and transparent
     overflow flyout pass mouse, keyboard, scaling, and reduced-motion checks; sidebar growth moves no
     neighbor (transform-only; the 2026-09-25 idle-small-type/activation ruling governs the sidebar's
     idle and hover/focus-within type sizes);
@@ -629,9 +654,11 @@ A page is deliverable only when:
 12. Recipe's three views and Release coverflow/pedestal retain complete degradation paths;
 13. each new visual element explains real use and can be removed without information loss.
 
-## 11. v0.6.1 accepted scope
+## 11. Accepted scope (merged at v0.6.1)
 
-The accepted scope covers the base character, two jurisdictions, tokens, component states, fixed five tabs,
+The accepted scope covers the base character, two jurisdictions, tokens, component states, the
+two-business-tab shell (Environment and Avatar creation, with Settings pinned right and Guide as a
+topbar overlay entry — user rulings 2026-09-25/2026-09-26),
 slanted controls and overflow flyout, sidebar growth impression, task feedback, the five AMF stages as full
 capability coverage (presentation per the 0.7.19 user ruling: wizard-selected paths, inspection folded into
 production records), the WebGL scene direction (the nebula backdrop retired by the 2026-09-25 ruling), Recipe's three views, Release coverflow/pedestal, community-skin
@@ -643,6 +670,17 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.23 (2026-10-01)**: status-quo alignment and reference repair — §0/§3/§10/§11 the retired
+  five-tab shell becomes the current two-business-tab shell (Environment, Avatar creation) with
+  Settings pinned right and Guide as a topbar overlay entry (user rulings 2026-09-25/2026-09-26);
+  the §8 module bullets receive the §8.1–§8.9 numbering this changelog already used, so every
+  internal §8.x citation resolves; phantom pointers repaired (§6.4/§8.1 → §4/§5 danger-confirmation
+  rules, §2.6 → §2 "Explicit facts and recovery", §2.2 → §2 "Recipe-first and path selection",
+  §6.2 → §6.1 notification semantics, §10.10 → §10 item 10); the `packages/design-system` token
+  mirror is stated as existing (manual mirror; contrast machine-checked); Korean joins the
+  long-string acceptance item; collab bookkeeping identifiers converted to dated rulings and dated
+  archived-proposal citations per governance §4. No rule change.
 
 - **0.7.22 (2026-09-28)**: erratum — §11 "Real M1–M7 slices may refine page layout after
   validation" becomes "Real N-gate slices may refine page layout after validation" following the
@@ -661,8 +699,8 @@ direction.
   tokens baseline none, grid retained) and the WebGL scene set drops the nebula backdrop (§0 Retain
   and §11 annotated); §7 the resource saver governs the heavy display features — 3D previews
   (release turntable, hub core), motion, glow, and glass blur — with `data-effects="off"` stripping
-  backdrop-filter globally; §10.10 acceptance bar moved to the two-level ladder. Consumed from the
-  shipped implementation by the desktop seat's reverse review (wt-3 batch 182); zero wire or
+  backdrop-filter globally; the §10 item 10 acceptance bar moved to the two-level ladder. Consumed from the
+  shipped implementation by the desktop-code reverse review of 2026-09-25; zero wire or
   contract-face change.
 
 - **0.7.20 (2026-09-23)**: governance-compliance maintenance — the §12 changelog is trimmed to
@@ -670,7 +708,7 @@ direction.
   history for older records); zero normative-content change. Mirrors the ZH edition.
 
 - **0.7.19 (2026-09-22)**: user ruling 2026-09-22 (product-boundary 1.5.0) consumed —
-  §2.2 the fixed five-stage flow becomes "full capability coverage + a wizard selecting the
+  §2 "Recipe-first and path selection": the fixed five-stage flow becomes "full capability coverage + a wizard selecting the
   path by goal/device/current state", including guidance not replacing account authentication
   or platform authorization and the Quest first-time tutorial distinguishing standalone vs
   PC-connected paths; §8.6 the standalone-inspection-page requirement is superseded by
@@ -682,8 +720,8 @@ direction.
   the Recipe overlay-conflict four options and the asset-source "fill in at share time"
   interaction (both marked accepted direction, not yet implemented). ZH mirror synced.
 
-- **0.7.18 (2026-09-22)**: §8.4 addendum for project draft export (U16
-  user-ruling B-face loop 4 desktop consumption, proposal 029 B4) - the
+- **0.7.18 (2026-09-22)**: §8.4 addendum for project draft export (desktop
+  consumption of B-face loop 4 under the U16 user ruling of 2026-09-21; proposal 029-B4) - the
   recipe page hero action row gains the "export draft from project" entry
   (recipe-export v0.1 frozen word-table consumption): the pick stage is
   limited to the VUA-registered project set (no arbitrary path input; stale
@@ -699,8 +737,8 @@ direction.
   baseRevision 0), "saved" only after the receipt, a draft never silently
   promoted. ZH mirror synced.
 
-- **0.7.17 (2026-09-22)**: §8.4 addendum for create and add-assets (U16
-  user-ruling consumption slice 3, proposal 029 A1/A2/A3 local segment) — the
+- **0.7.17 (2026-09-22)**: §8.4 addendum for create and add-assets (third
+  desktop slice consuming the U16 user ruling of 2026-09-21; proposal 029 facets A1/A2/A3 local segment) — the
   "Create" entry promoted onto the recipe page main path (U16 ruling wording;
   the draft dialog remains one creation starting point, two-UIs-one-save-chain
   holds); the selected-state "Add assets" action rides the recipe.save version
@@ -708,23 +746,23 @@ direction.
   guard; parallel-document-edit-chain form), pending additions and saved facts
   presented separately with "saved" shown only after the receipt; the asset
   picker = warehouse read-face projection (no third import entry; cloud access
-  = pending item 3/#46 stays honestly absent before a ruling). This closes the
+  = pending item 3 stays honestly absent before a ruling). This closes the
   proposal-029 A-face (A1–A6) desktop consumption loop. EN mirror synced.
 
 - **0.7.16 (2026-09-22)**: §8.5 addendum for the workshop as the execution status
-  face (U16 user-ruling consumption slice 2, proposal 029 A6) — the workshop only
+  face (second desktop slice consuming the U16 user ruling of 2026-09-21; proposal 029-A6) — the workshop only
   displays status (resolve/plan/assembly/record cards share the same source and
   store with the recipe-page initiation face, zero initiation actions; honest
   no-chain empty state + pure-navigation CTA; task handling points to the task
-  center); §8.4 one-line erratum (registered by integration batch 161): the chain
+  center); §8.4 one-line erratum (registered 2026-09-22): the chain
   identity source = the recipe.get receipt's TOP-LEVEL required identity fields
   (store-authoritative), not the recipeDocument body itself; the material
   direct-chain initiation point leaves the workshop and lands in the warehouse
-  page's action area (pending item 1's desktop form, ruled by operator batch 162,
+  page's action area (pending item 1's desktop form, ruled 2026-09-22,
   zero change to the v0.1 wire face). EN mirror of the authoritative ZH.
 
 - **0.7.15 (2026-09-22)**: §8.4 addendum for the recipe page as the production hub
-  (U16 user-ruling consumption slice 1, proposal 029 A4/A5) — the library
+  (first desktop slice consuming the U16 user ruling of 2026-09-21; proposal 029 facets A4/A5) — the library
   selection is the preview subject and the production-chain fact-source action
   (chain identity keys come only from the recipe.get receipt document identity,
   never list labels or local guesses; a changed document identity means a new
@@ -734,7 +772,7 @@ direction.
   the production-use-case v0.2 plan.approve idempotent wording (single key
   {planId}, no risk decision on this face); the stale-authorization gate
   (stale-draft) holds only while a composing draft is present and deviates from
-  the saved revision; #44×U16 word discipline codified for the first time (the
+  the saved revision; the U16 word discipline codified for the first time (the
   user action is "assemble" (组装); wardrobe mounting and the AMF Assembly stage
   keep "装配"). The workshop page is untouched (§8.5 addendum awaits slice 2,
   0.7.16). EN mirror of the authoritative ZH.
@@ -752,10 +790,10 @@ direction.
   presents while the backend open entry is unwired (no fabricated capability). EN mirror synced with
   the ZH authority.
 
-- **0.7.13 (2026-09-21)**: §8.7 addendum for repository lifecycle presentation (proposal 027
-  F4 consumption slice) — inline enable/disable and refresh controls on subscription rows
+- **0.7.13 (2026-09-21)**: §8.7 addendum for repository lifecycle presentation (proposal
+  027-F4 desktop consumption) — inline enable/disable and refresh controls on subscription rows
   gated on the packages.repoLifecycleOps capability fact row (degradation is not an error;
-  no fact no render); honest enable-wording ruling (W25 ruling (c): VUA-owned state,
+  no fact no render); honest enable-wording ruling (the W25 ruling (c) of 2026-09-20: VUA-owned state,
   disabled-not-hidden, shared settings never written, with the distinction from the
   settings-face shared-semantics copy discipline spelled out); dual-family negotiation
   discipline (a v0.1-family answer carries no enabled bit = the toggle control is not
@@ -782,8 +820,8 @@ direction.
   copy, never a broken image or a fabricated thumbnail; static/off modes return to flat
   horizontal scrolling and stable previews). EN mirror of the ZH authority.
 
-- **0.7.11 (2026-09-20)**: §8.7 addendum for template enumeration presentation (proposal 027 F5
-  consumption slice) — the create block mounts the template dropdown gated on the
+- **0.7.11 (2026-09-20)**: §8.7 addendum for template enumeration presentation (proposal
+  027-F5 desktop consumption) — the create block mounts the template dropdown gated on the
   packages.templatesOps capability fact row (a ready enumeration replaces the manual input; the
   default option = leave-empty backend default; the name projects verbatim, never a fabricated
   label; the id passes as-is as the createProject template argument); fall-back discipline

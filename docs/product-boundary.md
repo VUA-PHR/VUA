@@ -267,9 +267,9 @@ VUA identity binding or a VUA account database. Steam client, game and Unity CLI
 handoffs; Unity Hub is optional. An official page that refuses embedding has a system-browser fallback.
 
 Only guide progress and user-declared completion are saved by this first slice. A page opening
-does not prove registration, ownership or account linking. No authenticated API automation, page
-data extraction, cloud account service, password vault, cookie import or persistent sign-in is
-required for first delivery. Isolated temporary browser sessions handle interactive pages; secret
+does not prove registration, ownership or account linking. Authenticated API automation, page
+data extraction, a cloud account service, a password vault, cookie import and persistent sign-in
+are not part of first delivery. Isolated temporary browser sessions handle interactive pages; secret
 values never enter VUA application state, Gateway, Orchestrator, Agent context or diagnostic logs.
 This does not claim that embedded authentication is automatically permitted by every platform.
 
@@ -398,49 +398,36 @@ User-adopted implementation boundary (2026-09-29), informed by the
 
 ## Active delivery policy (user rulings, 2026-09-28)
 
-The [N1-N7 sequence](development-outline.md) replaces M/W scheduling. Develop usable vertical
-paths quickly, record bounded gaps, and fill them as real runs expose needs. Do not require
-exhaustive module completeness or universal human acceptance. Existing access, privacy, ownership,
-and explicit recovery requirements remain implementation constraints; results must still be factual.
+The [N1-N7 sequence](development-outline.md) replaces M/W scheduling and owns stage outcomes,
+acceptance rows, and evidence requirements (including human UI acceptance, blocked-step recording,
+and environment labeling). Develop usable vertical paths quickly, record bounded gaps, and fill
+them as real runs expose needs. Do not require exhaustive module completeness or universal human
+acceptance. Existing access, privacy, ownership, and explicit recovery requirements remain
+implementation constraints; results must still be factual.
 
 The project remains **Beta until the author explicitly requests otherwise**, with no planned
 v1.0.0 milestone and no production-safety guarantee. Historical release labels/tags are unchanged.
 N stages define delivery outcomes independently of product release numbers; the
-[versioning policy](release/versioning.md) selects versions from actual release changes.
-N-gate completion applies only to its recorded scenarios and disclosed limitations. Old M4 closure
-is withdrawn as proof of complete material management. N5 first audits actual capabilities;
-the user's report of minimal functionality is a reason to investigate, not a verified absence
-of the remaining implementation. Retain, complete, or replace code based on that audit.
+[versioning policy](release/versioning.md) selects versions from actual release changes and owns
+the numerical Beta mapping. N-gate completion applies only to its recorded scenarios and disclosed
+limitations.
 
-N2 acceptance includes both and only upstream VRCFaceTracking from benaclejames and hyblocker
-OpenVR-SpaceCalibrator as independently installed external applications. VUA discovers them,
-guides official installation, launches them on request and explains setup and verification.
-Steam/upstream tools own installation, updates, removal, hardware modules and calibration.
-Users add the tools to their Steam library and install them through Steam; VUA invokes supported
-external launch routes and observes their independent installations. The official applications
-retain their upstream features and license terms. Internal Space Calibrator driver IPC is not a VUA
-integration contract. This grants no VRChat injection or generic plugin-host authority.
+Scope rulings attached to the active sequence:
 
-N3's minimum real case is one Avatar, at least two actively used dependencies/plugins, and at
-least six other real materials simultaneously in one project, followed by actual VRC SDK handoff.
-Actual account upload remains user-operated and is not a gate prerequisite. N5 includes local
-material management and two separate BOOTH workflows: authorized account login followed by
-automatic available-material listing into a local catalog and selective download; and importing
-an already accessible cloud item into the local Warehouse/production-selection flow. This does
-not authorize purchasing, access bypass, or a project-operated asset server. Source sessions,
-orders, files and account catalogs remain local. N7 includes an illustrated end-user guide for
-the tested build, based on references the user will provide then.
+- N2's external-tool scope is exactly the two tools named in the
+  [outline](development-outline.md#n2-exactly-two-gameplay-tools), connected as independently
+  installed external applications; the official applications retain their upstream features and
+  license terms, and upstream owns their lifecycle. Internal Space Calibrator driver IPC is not a
+  VUA integration contract. This grants no VRChat injection or generic plugin-host authority.
+- [N5](development-outline.md#n5-audit-and-redo-material-management) BOOTH acquisition does not
+  authorize purchasing, access bypass, or a project-operated asset server. Source sessions,
+  orders, files and account catalogs remain local.
 
 Local uninstall/reinstall on this machine is authorized for deployment testing, with unrelated
 user data/projects preserved. Residual registry/configuration/environment state means such a run
 is not a completely clean OS. Separate VM and CI results are labeled by their actual environment.
 Before remote CI coverage there is no claim of guaranteed operation on other Windows versions;
 afterward, only the versions and operations actually exercised may be reported as tested.
-
-UI requires human usability acceptance. Non-UI operations may be accepted using agent/script runs
-against real software and outputs. Required account/consent actions and unavailable physical
-hardware affect only dependent steps; they do not globally suspend development. Mock outcomes
-remain explicitly simulated. Numerical Beta mapping is owned by [versioning](release/versioning.md).
 
 ## Current stage
 
@@ -455,23 +442,17 @@ plugin execution and a marketplace still require their separately accepted secur
 - 2.5.0 (2026-10-02): adopt model-driven official-first headset routes, observable silent installs
   and N1 activation/network guidance; make WMR first-delivery support conditional on investigation.
 
+- 2.4.1 (2026-10-02): state the first-delivery account exclusions at full strength (not "required")
+  and compress the active-delivery policy to boundary rulings, linking acceptance definitions to
+  the development outline; no scope change.
 - 2.4.0 (2026-10-01): select region-aware Unity/NoUnityCN source priority, a mirror switch and Hub fallback; authorize original-installer deployment with official CLI registration during N1 development.
 - 2.3.0 (2026-09-30): select official standalone Unity CLI installation with separate user licensing; Hub is optional.
-
 - 2.2.2 (2026-09-30): link the independent product-release numbering policy; N acceptance scope is unchanged.
-
 - 2.2.1 (2026-09-30): describe the selected Steam/external integration path directly.
-
 - 2.2.0 (2026-09-30): limit initial accounts to guided onboarding and select external-only N2 tools; record deferred VRChat account experiments.
-
 - 2.1.0 (2026-09-29): consolidate user-requested VRChat interaction, credential, account-operation and privacy boundaries.
-
-
 - 2.0.1 (2026-09-28): replace an outdated unwired claim with source evidence and the N5 verification boundary.
-
-
 - 2.0.0 (2026-09-28): adopt agile continuing-Beta N delivery, automated non-UI acceptance, exact N2 integrations, complex production, audited material rework, local reinstall testing and illustrated user guidance.
-
 - 1.5.0 (2026-09-22): the full user ruling of 2026-09-22 landed — new "Production scope and product
   rulings" section (confirmed scope: beginner Wizard and Quest guidance, Recipe as a stackable set
   of modifications with four conflict options, sharing and reproduction boundary, provenance filled
@@ -483,41 +464,5 @@ plugin execution and a marketplace still require their separately accepted secur
   prominent notice that the section is accepted direction, not an implementation or real-machine
   acceptance claim, and that frozen protocols and data formats do not automatically change.
   Mirrors the ZH edition.
-- 1.4.0 (2026-09-19): U14 user ruling landed in the boundary — project-management item 5
-  reaffirmed: the most frequently used "project management" in VUA is actually the Recipe and
-  Release modules; the package manager's primary form is Recipe-driven automatic resolution and
-  import (finding and importing the matching packages from a Recipe's inputs), with manual
-  per-package management as the secondary form; a settings-face exception is opened: the VPM
-  package-manager settings (the repository-subscription and local-package-registry faces of
-  `settings.json`) are shared with VCC/ALCOM as one file, VUA may read and write it, and changes
-  are visible to both sides immediately; the project-file face keeps U3 unchanged — external
-  import still defaults to clone-then-modify-the-copy and original projects stay read-only.
-  Mirrors the ZH edition.
 
-- 1.3.0 (2026-09-09): U7② + U9 user rulings landed in the boundary — a new Explicit-boundaries
-  clause, **remote web browsing and window/protocol boundary**: allowlist-first browsing,
-  non-allowlisted domains prompted but not blocked; purchase flow out of scope for now (not
-  permanent); download host domains proposed and approved per domain after real-machine
-  verification; the four-way split for new windows/external protocols (web-class new windows
-  never open separate windows; pseudo-protocols rejected unconditionally; external protocols
-  via a dedicated per-invocation confirmation layer without permanent skip; gesture requirement
-  plus unconditional denial of native new-window creation). Mirrors the ZH edition.
-
-- 1.2.1 (2026-09-08): trigger-timing clarification (W15 second-round re-review fix item) — the
-  target trigger timing of "generate a VPM package as a replacement" is **at material import**
-  (automatic generation); not yet wired in the current version (honestly labeled in the UI),
-  generation still starts manually, and the import-time hook and orchestration semantics land
-  with the M5 wiring. Mirrors the ZH edition.
-- 1.2.0 (2026-09-08): U3 user ruling landed in the boundary (after third-party arbitration
-  review) — project-management item 5 becomes read-only compatibility with ALCOM/VCC-managed
-  projects plus the single write path "import as a VUA-managed copy"; a new Explicit-boundaries
-  clause adds the allow list (discovery/identification, reading version/package/SDK/
-  compatibility/environment state, diagnostics/plans/suggestions, write handoff, copy import),
-  the deny list (install/remove packages in the original project, modifying manifest/
-  configuration/assets/`.vua` job files, writing ALCOM/VCC registries/databases/settings/caches,
-  silent relabeling), the five-point copy-import spec (new path+identity, upfront disk estimate,
-  no copying of regenerable directories or legacy task state, re-Inspect without inheriting
-  confirmations/snapshots, source relationship kept), the rationale (VUA's project lock
-  coordinates VUA instances only; cross-tool locking is not feasible; "allow writes + warn" is
-  not a real guarantee), and the tightening clause (write capability uniformly false in `1.0.x`;
-  future opening only via a new user ruling). Mirrors the ZH edition.
+Earlier entries (1.4.0 and older) live in git history.

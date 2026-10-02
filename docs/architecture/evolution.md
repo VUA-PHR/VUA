@@ -49,7 +49,7 @@ installer process starting or exiting alone.
 
 ### Account guidance alongside deployment
 
-Use the existing Wizard and isolated browser for the base play/creator accounts and the selected
+Use the existing onboarding and guide renderer features and the isolated browser for the base play/creator accounts and the selected
 device/streaming/accelerator accounts in the product boundary. Start with an ordered guide step,
 official destination, phone/headset/client handoff, user-declared progress
 and explicit handoff/resume. Do not build a multi-platform Auth Broker, account database or token
@@ -118,9 +118,9 @@ selection and plan review to durable confirmed execution. Reuse the existing fil
 discovery as hints, then strengthen prerequisite checks in project-manager. Core planning does
 not depend on Hub syntax or Windows handles. The Provider only constructs/delegates these services.
 
-The [Unity deployment direction](unity-deployment.md) uses the original installer for the exact
-global Editor and the official Unity CLI for registration and Android modules. Hub is the fallback.
-Reviewed CLI acquisition and
+The [standalone Unity deployment direction](unity-deployment.md) owns the Editor route: Unity's
+original installer performs installation, and the official Unity CLI registers the actual
+Editor from the accepted development pair, handles licensing, and adds Android modules. Hub is optional. Reviewed CLI acquisition and
 Editor installation use separate confirmed plans; unsupported capabilities or paths require
 explicit handoff. There is no shared install-path mutation, VR runtime replacement or floating
 version selection. The contract owns confirmation, idempotency, cancellation and verification.
@@ -146,7 +146,7 @@ Keep stable root paths to avoid churn. Give each question one entry point:
 | What is being delivered next, and what counts as done? | `development-outline.md` |
 | What is allowed and who owns it? | `product-boundary.md` |
 | What exists and where does code go? | `architecture/system.md` and domain documents |
-| What is a proposed implementation change? | This accepted direction; concrete contracts land with each slice |
+| What governs proposed implementation changes? | This accepted direction; concrete contracts land with each slice |
 | What exact data crosses a boundary? | `protocols/` plus schemas and consumer tests |
 | What was actually decided? | Accepted immutable `decisions/`; current consequences summarized in owning docs |
 | What is verified on which environment? | Compatibility docs and local run evidence; release conclusions |
@@ -184,10 +184,11 @@ installer choices above are not frozen interfaces; define them from the first ex
 - 1.4.0 (2026-10-02): route model-first play, observable silent installation and account/network
   guidance through existing owners; align the current Unity installer/source policy.
 
+- 1.3.1 (2026-10-02): align the implemented N1 increment with the owning deployment document
+  (Unity's original installer installs the Editor; the official CLI registers it and owns Android
+  modules), name the real onboarding/guide renderer features instead of a nonexistent Wizard
+  module, and clarify that this accepted direction governs proposed implementation changes.
 - 1.3.0 (2026-09-30): prefer official standalone Unity CLI deployment; retain existing Hub only as optional fallback.
-
 - 1.2.0 (2026-09-30): link the implemented purpose-plan/confirmation slice and distinguish remaining N1 functional acceptance.
-
 - 1.1.0 (2026-09-30): add minimal account-guide state and external-only N2 adapter responsibilities.
-
 - 1.0.0 (2026-09-28): user accepted retaining the stack and incrementally reorganizing software responsibilities and documentation for N1-N7.
