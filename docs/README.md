@@ -1,7 +1,7 @@
 # Documentation guide
 
 > Status: Accepted
-> Updated: 2026-09-30
+> Updated: 2026-10-02
 > Scope: Current documentation routes for ordinary single-line N-sequence development
 
 ## Choose your reading context
@@ -52,7 +52,7 @@ AGENTS.md and CONTRIBUTING; then follow one route below instead of reading the e
 
 | Task | Read next | Add only when needed |
 | --- | --- | --- |
-| N1 deployment / N2 tools | [System map](architecture/system.md), [integration boundaries](architecture/integrations-and-overlays.md), [incremental evolution](architecture/evolution.md) | Environment/editor compatibility, relevant Gateway contract, selected upstream adapter |
+| N1 deployment / N2 tools | [N1 delivery plan](development/n1-delivery-plan.md), [system map](architecture/system.md), [integration boundaries](architecture/integrations-and-overlays.md), [incremental evolution](architecture/evolution.md) | Device/model routes, installation activity, account/activation/network guide, Editor compatibility and relevant Gateway contract |
 | N3 production / N4 Recipe | [AMF and Unity](architecture/amf-unity.md), [Orchestrator](architecture/orchestrator.md) | Production/material/Recipe/SDK handoff contracts and real-run evidence |
 | N5 material audit/rework | [BDL](architecture/bdl.md), [AMF](architecture/amf-unity.md) | Current UI/Gateway/code/tests; account listing, selective download and import contracts |
 | UI changes | [Desktop](architecture/desktop.md), [design standard](design/design-standard.md) | Relevant feature and human UI acceptance |

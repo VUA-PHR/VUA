@@ -1,10 +1,10 @@
 # Electron desktop and presentation architecture
 
 
-> Document version: 1.4.0
+> Document version: 1.5.0
 > Status: Accepted
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
-> Updated: 2026-10-01
+> Updated: 2026-10-02
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -54,8 +54,10 @@ correlation, post-download inspection, and Warehouse/BDL decisions.
 
 ## Account-guide browser
 
-The first account slice opens official Steam/VRChat registration pages and optional Unity/BOOTH
-pages in the existing isolated built-in browser. Reuse security enforcement; do not create an
+The account guide opens official Steam/VRChat registration pages and optional Unity/BOOTH pages,
+plus manufacturer, headset-store, streaming or accelerator pages required by the selected route.
+Use the existing isolated built-in browser, with phone/headset/native-client handoff and saved
+guide progress where needed. Reuse security enforcement; do not create an
 Auth Broker service. Separate temporary account-guide partitions from AMF's BOOTH acquisition
 profile and from one another except for required in-flow identity-provider navigation. Do not
 persist these guide partitions; dispose/clear them when the guide session ends. Do not scrape
@@ -73,6 +75,17 @@ The product boundary records later web-reading and experimental persistence inte
 enabled by this first slice. Any future persisted profile needs explicit consent, local browser
 storage and tested clearing/logout semantics, without secrets in application or Agent data paths.
 This is intended architecture, not evidence that existing browser code already meets these cases.
+
+## Deployment presentation
+
+The [N1 delivery plan](../development/n1-delivery-plan.md) starts headset selection with brand and
+model. The backend resolves official route requirements. Present cable/wireless questions only
+where they affect the selected model, and keep optional alternative streaming choices explicit.
+
+Silent installations retain a visible task. Render component, phase, real progress when exposed,
+elapsed time, observed activity and required interaction. A UI timer is not installer evidence.
+Extended inactivity exposes details and next actions. Reopening the page reads the existing task;
+application restart uses the existing inspect-required recovery behavior. All copy uses i18n.
 
 ## Remote content isolation
 
@@ -141,6 +154,9 @@ dependency/license review, Electron security checks, remote-permission tests, si
 rollback validation. The redistribution review authorizes each bundled binary.
 
 ## Document changelog
+
+- 1.5.0 (2026-10-02): describe model-first deployment, silent-install activity and device/service
+  account handoffs using existing isolated browser and task surfaces.
 
 - 1.4.0 (2026-10-01): allow the Unity Hub installation handoff under the existing per-action external-protocol confirmation.
 

@@ -2,7 +2,7 @@
 
 > Document version: 0.1
 > Status: Candidate
-> Updated: 2026-10-01
+> Updated: 2026-10-02
 > Scope: Additive purpose-plan and confirmed-execution family under Gateway v1 / application 0.1
 
 ## Reading context and ownership
@@ -112,7 +112,14 @@ nonterminal task is `inspect_required`, never silently resumed or automatically 
 
 Progress uses the frozen task-progress envelope: `completed`/`total` count prerequisite steps,
 `messageKey` is localized, and params contain the closed operation/component/action/phase facts.
-`started` is distinct from `verified`; these are not fabricated download percentages. Failed
+Phases are `started`, `resolving_source`, `downloading`, `verifying`, `installing`, `inspecting`,
+`registering`, `source_failed`, `cache_rejected` and `verified`. Optional `source` is `official`
+or `nounitycn`. Optional `completedBytes`/`totalBytes` are nonnegative safe integers; a supplied
+total is positive and at least the completed count. Unknown-length transfers omit total bytes.
+Optional `cause` is a bounded `vua.deployment.*` code, never raw vendor text. A `source_failed`
+phase requires source and cause. Counts in the outer envelope still describe prerequisite steps.
+The desktop displays native installation stage and elapsed time while the process is monitored;
+it does not infer an installation percentage. Failed
 automatic steps include `component` in the error params. Progress and final results are durable;
 the current panel consumes live progress and authoritative task snapshots. Reopening a page may
 miss earlier live progress; the task list and final state remain authoritative, not guessed.
@@ -129,6 +136,9 @@ redirects and failed file checks advance to the next enabled source. A debug-onl
 `VUA_DEV_EDITOR_INSTALLER` reuses a browser
 download with the same checks. The original NSIS installer uses `/S` and a final unquoted
 `/D=` directory. Windows owns any UAC prompt; cancellation takes effect after the installer boundary.
+Download and hash verification check cancellation when reporting activity, approximately once
+per second while bytes are flowing. An idle transfer has a 60-second read timeout. An invalid
+managed cache is retained under a unique rejected filename before retrying acquisition.
 The installed Editor is inspected and registered with the official CLI's `editors add` command.
 The elevated installer is waited directly rather than supervised through the ordinary Job Object;
 its direct completion and Editor reinspection decide this native step's outcome.
@@ -156,7 +166,8 @@ progress so an accepted cancellation does not corrupt task state.
 A manual step finishes with warnings and `{outcome:"manual_required", nextStep,
 prerequisitesReady:false, functionalVerification:"not_run"}`. The user completes the upstream
 step, then prepares a fresh plan. Exhausted Editor sources return that same warning outcome with
-`handoff:"unity_hub"`, `handoffUrl:"unityhub://2022.3.22f1/887be4894c44"` and a `unity_hub` manual
+`handoff:"unity_hub"`, `handoffUrl:"unityhub://2022.3.22f1/887be4894c44"`, ordered `sourceFailures`
+containing the reported `source_failed` activity objects, and a `unity_hub` manual
 next step. The panel offers the version-specific Hub link and official Hub download page. No
 Android install follows that handoff, and replay returns the stored result without downloading
 again. Native installer or registration failures retain their ordinary error outcomes.
@@ -201,6 +212,7 @@ evidence must distinguish synthetic coverage from dated real-machine runs kept l
 
 ## Document changelog
 
+- 0.1 Candidate update (2026-10-02): add closed stage/byte facts within task progress, preserve source causes in the Hub handoff, and report acquisition cancellation boundaries.
 - 0.1 Candidate update (2026-10-01): add mirror preference, consent-bound region/source policy and durable Hub handoff; use native installation, Windows elevation and official CLI registration under install_editor.
 - 0.1 Candidate update (2026-10-01): require structured CLI completion and add bounded vendor-failure guidance; record the regional artifact mismatch.
 - 0.1 Candidate update (2026-09-30): add fixed official CLI acquisition, Hub-independent installation authority and consent-bound executable identity; retain existing frozen methods.

@@ -1,10 +1,10 @@
 # VUA product boundary
 
 
-> Document version: 2.4.0
+> Document version: 2.5.0
 > Status: Accepted
 > Scope: Entire VUA product
-> Updated: 2026-10-01
+> Updated: 2026-10-02
 > Normative effect: Yes
 
 ## Product definition
@@ -208,6 +208,29 @@ gate derives risk from declared capabilities and behavior.
 - **Least privilege:** remote content, plugins, and third-party components receive only required
   capabilities.
 
+## N1 device and network onboarding
+
+User rulings of 2026-10-02 expand N1 from the original PICO example to brand/model-driven play
+preparation. The first device pool covers Meta Quest, Oculus Rift S, PICO, HTC VIVE, Valve Index
+and Sony PS VR2. Investigate Windows Mixed Reality's installation and validation cost before
+committing it to first delivery; substantial work may be deferred under the user's permission.
+Bigscreen and Varjo follow the initial pool. Deliver one complete route per supported model
+first, preferentially the official manufacturer route, then add alternative streaming choices.
+
+Players select brand and model. Derive direct video connection, USB streaming or wireless
+streaming internally; ask a plain-language connection question only where that model has multiple
+relevant choices. Match consumer/enterprise editions explicitly. Streaming choices include the
+manufacturer's software, ALVR, Virtual Desktop and Steam Link as model-specific routes land.
+
+Prefer supported silent installation with a visible task: actual phase, elapsed time, available
+progress/activity, interaction requests and next actions during prolonged inactivity. Verify
+installed results and keep user actions attached to that task. Route-specific account guidance,
+headset activation and regional connectivity are N1 prerequisites. For mainland-China users,
+evaluate dedicated activation/acceleration services and offer services such as NetEase UU with
+an explicit no-financial-relationship disclosure. Region informs suggestions; target-service
+reachability and user correction refine the plan. Existing privacy boundaries apply.
+See the [N1 delivery plan](development/n1-delivery-plan.md).
+
 ## Unity deployment
 
 For N1, detect the download-network region first: mainland China prefers NoUnityCN; other or
@@ -223,9 +246,11 @@ this does not widen first-delivery account storage or authentication automation.
 
 ## Account onboarding (user ruling, 2026-09-30)
 
-The first usable delivery guides people through official pages in the built-in browser. It is
-not a multi-platform account manager. The initial scope is exactly Steam and VRChat for play,
-with optional Unity and BOOTH/pixiv registration guidance for the creator route. Existing users
+The first usable delivery guides people through official pages in the built-in browser, with
+client, phone-app or headset handoffs where required. The base scope is Steam and VRChat for play,
+with optional Unity and BOOTH/pixiv registration guidance for the creator route. Add manufacturer,
+headset-store, streaming and accelerator account guidance when the selected device route requires
+it (user ruling 2026-10-02). Existing users
 can skip registration. VUA explains each step; users enter account information, solve challenges,
 accept terms, add VRChat to their Steam library, and perform account upgrade/linking themselves.
 Account linking means the official Steam-platform-account to full VRChat-account flow, not a
@@ -415,6 +440,9 @@ unchanged; this ruling is not a new product release. Runtime-tool deployment is 
 plugin execution and a marketplace still require their separately accepted security decisions.
 
 ## Document changelog
+
+- 2.5.0 (2026-10-02): adopt model-driven official-first headset routes, observable silent installs
+  and N1 activation/network guidance; make WMR first-delivery support conditional on investigation.
 
 - 2.4.0 (2026-10-01): select region-aware Unity/NoUnityCN source priority, a mirror switch and Hub fallback; authorize original-installer deployment with official CLI registration during N1 development.
 - 2.3.0 (2026-09-30): select official standalone Unity CLI installation with separate user licensing; Hub is optional.

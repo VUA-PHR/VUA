@@ -1,8 +1,8 @@
 # Unity Editor deployment
 
-> Document version: 2.0.0
+> Document version: 2.1.0
 > Status: Accepted
-> Last conformance review: 2026-10-01
+> Last conformance review: 2026-10-02
 
 For people: choose Avatar editing, review the version, download order and destination, and let VUA
 download and install the global Unity Editor. Mainland-China download networks start with
@@ -70,18 +70,18 @@ The source order follows the author's 2026-10-01 ruling:
 | Other or unknown | Unity official → NoUnityCN → Unity Hub | Unity official → Unity Hub |
 
 [RegionProbe](../../crates/project-manager/src/unity_download_region.rs) makes one bounded HTTPS
-request to Cloudflare's public trace endpoint and reads only the country category. This measures
-the current download exit, including a user's proxy, rather than physical residence. Hong Kong
+request to Cloudflare's public trace endpoint and reads only the country category. This observes
+the exit used for that probe, including a user's proxy; individual vendor hosts may use different
+routes. It supplies an initial source-order hint rather than physical residence. Hong Kong
 and Taiwan are outside the mainland category. Only the category is cached in memory for ten
 minutes; IP addresses, trace bodies and location history are not retained. Probe failure gives
 `unknown` and starts with the official source.
 
 The mirror entry is
 [NoUnityCN's exact-version download page](https://www.nounitycn.top/download?v=unityhub%3A%2F%2F2022.3.22f1%2F887be4894c44).
-The adapter reads the fixed target's href from that page and carries the page as its referrer;
-its published `pd.zwc365.com/seturl/` transfer service is the current mirror route. The official
-route directly requests Unity's original download URL. Turning mirrors off excludes requests
-to both NoUnityCN and its transfer service. A verified completed local cache may still be reused.
+The adapter reads the fixed target's Windows-button href and requests that exact URL with the
+page as its referrer. The official route directly requests Unity's original download URL.
+Turning mirrors off excludes NoUnityCN requests. A verified completed local cache may still be reused.
 The current global Windows artifact is:
 
 - Version / changeset: `2022.3.22f1` / `887be4894c44`.
@@ -103,7 +103,26 @@ In a debug build, `VUA_DEV_EDITOR_INSTALLER` can point to an already downloaded 
 This lets the real Provider/task path reuse a browser download during development, with the same
 file checks. It is a process-local development option, separate from renderer inputs. Release
 builds use the confirmed source policy. Interrupted downloads use uniquely named staging files;
-a completed cache is reused.
+a completed valid cache is reused. An invalid managed cache is retained under a unique rejected
+filename, freeing the download slot for another attempt.
+
+## Progress and actionable failures
+
+Each Editor step reports source resolution, downloading, file verification, installation,
+inspection and CLI registration through the existing durable task events. Download and hash
+verification report actual completed/total bytes at most once per second, plus stage boundaries.
+Known-length transfers have a byte progress bar; the native installer has a stage and elapsed
+time while ProcessRunner waits for completion. A timer is not an installer percentage.
+
+The transfer allows two hours overall, with a 30-second connection timeout and 60-second read
+timeout; resolving the mirror page has a 30-second total timeout. Cancellation and failed durable
+progress writes stop at the next acquisition reporting boundary. During native installation,
+cancellation takes effect when the installer returns.
+
+Each failed source retains a bounded cause: source-page change, regional redirect, other redirect,
+HTTP failure, timeout, transfer failure or file-integrity failure. The Hub handoff includes these
+source failures, and the panel exposes them in download details. Raw response bodies, vendor logs
+and credentials remain outside task messages.
 
 ## Official tooling and user choices
 
@@ -135,12 +154,19 @@ with warnings and the exact-version Unity Hub handoff. Native Editor installatio
 next step on this machine. Raw downloads and observations stay in ignored
 `_local_real_machine/` directories.
 
+On 2026-10-02, the corrected exact-button route ran through the real Provider. The official and
+NoUnityCN requests both reached a regional CDN redirect on this network. The task now retains
+two `editor_regional_redirect` source failures in its Hub handoff. Evidence is in
+`_local_real_machine/n1-direct-button-2026-10-02/`. Continue by comparing the user's browser
+download path/transport and exercising the original installer through the same Provider.
+
 After the first installation, record the actual installed version, registration result and
 destination, then run license/project checks and an Android-module attempt. Follow N1's remaining
 play, account-guide, update/removal, configuration and UI scenarios in small increments.
 
 ## Document changelog
 
+- 2.1.0 (2026-10-02): follow the actual mirror button, report stage/byte activity and source-specific failures, and make invalid managed caches retryable.
 - 2.0.0 (2026-10-01): select region-aware official/NoUnityCN priority, an enabled-by-default mirror setting and Unity Hub handoff; implement the original-installer/official-CLI path and a debug local-file option.
 - 1.1.0 (2026-10-01): identify the regional artifact mismatch and require structured CLI installation results.
 - 1.0.0 (2026-09-30): define official standalone CLI acquisition and separate licensing and functional checks.

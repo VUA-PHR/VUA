@@ -1,8 +1,8 @@
 # N-sequence architecture evolution
 
-> Document version: 1.3.0
+> Document version: 1.4.0
 > Status: Accepted
-> Updated: 2026-09-30
+> Updated: 2026-10-02
 > Scope: Incremental software and documentation structure for N1-N7
 > Normative effect: Accepted incremental direction; existing wire/storage contracts remain authoritative
 
@@ -33,7 +33,8 @@ when a measured dependency, build, packaging, or independent lifecycle problem j
 
 ### Flow
 
-1. The user chooses a purpose and location. UI sends intent, not shell commands.
+1. The user chooses a purpose, location and, for headset play, brand/model. Derive the official
+   model route and ask cable/wireless details only when needed. UI sends intent, not shell commands.
 2. The application asks existing inspection services for observations, including unknown/failure.
 3. A small planner compares those observations with the selected purpose's requirements.
 4. The UI shows resulting retain/install/add-component/configuration/manual actions and reasons.
@@ -48,13 +49,16 @@ installer process starting or exiting alone.
 
 ### Account guidance alongside deployment
 
-Use the existing Wizard and isolated browser to show the four-platform guide defined in the
-product boundary. Start with an ordered guide step, official destination, user-declared progress
+Use the existing Wizard and isolated browser for the base play/creator accounts and the selected
+device/streaming/accelerator accounts in the product boundary. Start with an ordered guide step,
+official destination, phone/headset/client handoff, user-declared progress
 and explicit handoff/resume. Do not build a multi-platform Auth Broker, account database or token
 vault. Browser session state is not task state; no passwords, cookies or authentication URLs with
 secrets enter the deployment journal. A user declaration is not a detected account fact.
 
-Keep registration and Steam library/link guidance in N1; BOOTH acquisition remains N5.
+Keep registration, Steam library/link guidance, headset activation and regional connectivity in
+N1; BOOTH acquisition remains N5. The [N1 delivery plan](../development/n1-delivery-plan.md)
+contains the concrete official-first routes and investigation order.
 Add VRChat web-information reading only after the first usable delivery, with its own minimal
 versioned data contract. Experimental persistence is a separate deferred slice, not implied by
 opening a registration guide or reusing the BOOTH acquisition session.
@@ -63,11 +67,13 @@ opening a registration guide or reusing the BOOTH acquisition session.
 
 Proposed application concepts (names are illustrative, not frozen DTOs):
 
-- Goal: requested purpose, relevant device choice, installation/project locations.
+- Goal: requested purpose, brand/model, model-relevant connection choice, installation/project locations.
 - Observation: component identity, detected version/location, result, observation time.
 - Plan: selected goal, required versions/components, relevant baseline, ordered actions and reasons.
 - Step: action kind, target, prerequisite, adapter, verification and recovery capability.
 - Step result: actual outcome, actual version/location, next action, local evidence reference.
+- Step activity: actual phase/byte counts, observed installer activity and required user action;
+  elapsed time and monitoring refresh remain distinct from observed installation progress.
 
 Keep the initial plan ordered. Add only concrete dependencies required by the first use case;
 do not introduce a universal DAG scheduler or software catalog language. Internal structs need
@@ -112,8 +118,9 @@ selection and plan review to durable confirmed execution. Reuse the existing fil
 discovery as hints, then strengthen prerequisite checks in project-manager. Core planning does
 not depend on Hub syntax or Windows handles. The Provider only constructs/delegates these services.
 
-The [standalone Unity deployment direction](unity-deployment.md) prefers the official Unity CLI
-for the exact global Editor and Android modules. Hub is optional. Reviewed CLI acquisition and
+The [Unity deployment direction](unity-deployment.md) uses the original installer for the exact
+global Editor and the official Unity CLI for registration and Android modules. Hub is the fallback.
+Reviewed CLI acquisition and
 Editor installation use separate confirmed plans; unsupported capabilities or paths require
 explicit handoff. There is no shared install-path mutation, VR runtime replacement or floating
 version selection. The contract owns confirmation, idempotency, cancellation and verification.
@@ -165,14 +172,17 @@ actual UI work. Splitting it is not required to implement N1.
 
 The exact Unity install adapter, installer acquisition method, requested privilege scope, timeout,
 and retry behavior need a capability check on this machine before being specified as supported.
-Do not equate this design with proof that a specific CLI version works. Optional mirrors, universal
-version switching and OS snapshots remain follow-on work rather than implicit commitments.
+Exercise each adapter against the chosen software. The accepted Unity mirror switch and source
+order belong to the current slice. Universal version switching and OS snapshots remain later work.
 
 The user confirmed on 2026-09-28: keep Electron + Rust + Unity Bridge and progressively adjust
 responsibilities while reorganizing docs. This direction is accepted. Illustrative DTO names and
 installer choices above are not frozen interfaces; define them from the first executable N1 slice.
 
 ## Document changelog
+
+- 1.4.0 (2026-10-02): route model-first play, observable silent installation and account/network
+  guidance through existing owners; align the current Unity installer/source policy.
 
 - 1.3.0 (2026-09-30): prefer official standalone Unity CLI deployment; retain existing Hub only as optional fallback.
 

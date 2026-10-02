@@ -1,9 +1,9 @@
 # VUA development sequence
 
-> Document version: 3.5.0
+> Document version: 3.6.0
 > Status: Accepted
-> Updated: 2026-09-30
-> Authority: User rulings of 2026-09-28 and the 2026-09-30 account/external-tool scope and release-decoupling updates
+> Updated: 2026-10-02
+> Authority: User rulings of 2026-09-28 through 2026-10-02, including release decoupling and N1 device/network onboarding
 > Scope: N1-N7, real-machine deployment and real-material workflows, continuing Beta
 > Normative effect: Schedules accepted product work; product scope belongs to product-boundary.md
 
@@ -112,19 +112,24 @@ a general environment version manager are not prerequisites.
 
 | Function | Required behavior and observable acceptance |
 | --- | --- |
-| Choose purpose | Distinguish desktop play, PICO PCVR, PC Avatar editing, and Quest Avatar editing; multiple choices are possible. Desktop play alone does not require Unity or SteamVR |
+| Choose purpose and device | Offer desktop play, headset play, PC Avatar editing and Quest Avatar editing; allow combinations. Headset selection starts with brand and exact model and recommends one official route. The product boundary defines the first pool and WMR investigation exception; ask connection details only where needed |
 | Inspect | Report installed, missing, unsuitable-version, and detection-failed separately; correctly identify this machine's existing play stack and absent Unity |
 | Plan | Explain each retain/install/update/component/configuration action, location, reason, optional items, and user handoff before execution; do not silently choose latest incompatible versions |
-| Execute | Show real download/installation/configuration state and the failed step; starting an installer is not installation success |
+| Execute | Prefer supported silent installation. Show component, phase, elapsed time and observed activity; use real byte counts/percentages when available. Surface user interaction and prolonged inactivity with next actions. Track the actual installer lifetime and verify its result |
 | Configure | Record old/new values and scope for necessary changes; installing Unity does not silently change the existing VR runtime |
 | Validate | Reinspect after install; actually launch Unity and open a disposable project with real SDK/MA dependencies; test play launch separately from device behavior |
 | Repeat | A second run reuses satisfied prerequisites and installs only missing components; failed operations have a usable retry or manual path |
+| Device route | For each supported model, complete one official-first installation/connection route, including required PC and headset software, pairing and game launch. Record the exact model and connection used; expand alternative streaming choices afterwards |
+| Network and activation | Guide regional service access and headset activation. Mainland-China suggestions include dedicated accelerators with a no-financial-relationship disclosure and an existing-service/skip choice. Check target-service reachability separately from LAN streaming; exercise headset update, phone login and pairing for the selected Quest activation route |
 
 First local path: keep existing SteamVR/PICO/VRChat, choose PC Avatar editing, install global
 Unity 2022.3.22f1 through the [official standalone CLI](architecture/unity-deployment.md)
 (Hub optional), complete user licensing and necessary components, resolve actual SDK/MA dependencies, and open the test
 project. Exercise each declared purpose on an applicable environment; record missing equipment
-as blocked rather than inventing results. UI gets human review; backend operations may be automated.
+as blocked rather than inventing results. WMR may be excluded from first delivery after the
+installation/validation cost investigation, with a recorded reason. UI gets human review; backend
+operations may be automated. The [N1 delivery plan](development/n1-delivery-plan.md) organizes
+the implementation slices and device/account/network research.
 
 ### Initial account guidance acceptance
 
@@ -138,6 +143,7 @@ a generic account/token manager before this path works.
 | New player | Offer Steam and VRChat registration guidance; users submit official forms themselves. Guide adding VRChat to the Steam library and installing/launching through Steam. An opened page is recorded as opened, not as an account or successful installation |
 | Existing player | Allow skipping existing accounts; guide the official Steam-platform-account upgrade/link path when needed, without storing credentials or inventing a VUA binding |
 | Optional creator | Offer Unity and BOOTH/pixiv registration only for the creator route. Explain purchase, official Unity authorization/licensing and SDK handoffs; Hub is optional. Skipping them leaves the play route usable |
+| Device/service accounts | Add only accounts or store authorizations needed by the selected manufacturer, streaming or accelerator route. Save guide progress; support existing accounts, phone/headset/client handoff and return after interruption |
 | Upload eligibility | Explain full VRChat account plus New User or higher; show user-reported or unknown eligibility honestly. Normal-play guidance promises no promotion date. A Visitor can continue local preparation/testing; only upload remains gated |
 | Interrupt/decline | Closing a page, refusing consent, failed registration or blocked embedding leaves a resume/manual route. CAPTCHA, terms, account linking and payment stay with the user |
 | Privacy | First-slice registration sessions are nonpersistent and isolated; no cookie/password/token values in app state, IPC, Agent context or logs. Ending the guide session clears its temporary state. Saved progress does not imply authenticated verification |
@@ -348,6 +354,9 @@ Prioritize the first real blocker, repair and rerun it, then expand. Record boun
 do not turn documentation completeness, speculative coverage, or idle agent activity into goals.
 
 ## Document changelog
+
+- 3.6.0 (2026-10-02): expand N1 acceptance to model-first official routes, installation activity,
+  device/service accounts and regional activation/connectivity; record the WMR investigation exception.
 
 - 3.5.0 (2026-09-30): make the official standalone CLI the first N1 Editor route, preserving license and real-project acceptance.
 
