@@ -1,6 +1,6 @@
 # N1 delivery plan: from a device choice to a working environment
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
 > Updated: 2026-10-02
 > Scope: Implementation of the user's September 30–October 2 N1 rulings
@@ -124,18 +124,21 @@ computer/headset connectivity from Internet access before recommending a remedy.
 
 The [Unity deployment architecture](../architecture/unity-deployment.md) owns acquisition and
 installation. Keep the accepted source policy: mainland China prefers NoUnityCN; other/unknown
-regions prefer Unity; then try the other enabled source; Hub is the fallback. Keep the
-enabled-by-default mirror switch in Settings.
+regions prefer Unity, followed by the other enabled source. Try global `2022.3.22f1` first,
+then China `2022.3.22f1c1` if global acquisition or installation fails; offer Hub after both fail.
+Keep the enabled-by-default mirror switch in Settings. During development the author accepts
+this exact f1/c1 pair as equivalent; retain the full observed identity and fix concrete
+compatibility issues through real project trials.
 
 Reproduce NoUnityCN's exact-version Windows button and request its actual href. Preserve the
 page/referrer and relevant transport behavior; do not insert a relay that the button did not
 select. Report source resolution, received bytes, file identity, installer exit, Editor inspection
-and registration separately. Verify the exact global Editor and retain a completed valid cache.
+and registration separately. Inspect the actual accepted Editor version and retain a valid cache.
 
 First local completion path:
 
 > Select PC Avatar editing -> reuse the existing play environment -> obtain the global
-> `2022.3.22f1` installer -> install at the confirmed destination -> inspect/register the Editor ->
+> `2022.3.22f1` installer (China `2022.3.22f1c1` fallback) -> install at the confirmed destination -> inspect/register the Editor ->
 > complete official Unity authorization/licensing -> prepare real SDK/MA dependencies ->
 > open and compile a disposable project successfully.
 
@@ -194,6 +197,8 @@ combined Cargo dependency graph and inspect the lockfile rather than taking one 
 - [NetEase UU](https://uu.163.com/console/) and [third-party Meta Helper](https://ochelper.xlemon.cn/home.html).
 
 ## Document changelog
+
+- 1.1.0 (2026-10-02): apply the accepted development f1/c1 pair and global → China → Hub installation order.
 
 - 1.0.0 (2026-10-02): record model-first official routes, visible silent installation,
   account/activation/network guidance, Unity first-run work and N5 integration.

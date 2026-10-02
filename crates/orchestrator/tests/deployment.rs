@@ -18,6 +18,26 @@ fn intent(purposes: Vec<DeploymentPurpose>) -> DeploymentIntent {
         use_mirrors: true,
     }
 }
+
+#[test]
+fn development_admission_accepts_only_the_declared_pair_and_keeps_global_first() {
+    for version in ["2022.3.22f1", "2022.3.22f1c1"] {
+        assert!(accepted_development_editor(version));
+    }
+    for version in [
+        "2022.3.22f1c2",
+        "2022.3.23f1",
+        "2022.3.22f1c1-extra",
+        "2022.3.22f1 ",
+    ] {
+        assert!(!accepted_development_editor(version));
+    }
+    let policy = EditorDownloadPolicy::new(DownloadRegion::ChinaMainland, true);
+    assert_eq!(
+        policy.editor_editions,
+        [EditorEdition::Global, EditorEdition::China]
+    );
+}
 fn fact(component: &str, presence: DeploymentPresence) -> DeploymentObservation {
     DeploymentObservation {
         component: component.into(),
@@ -118,11 +138,17 @@ impl DeploymentAdapter for FakeAdapter {
         }
         if self.hub_fallback && action == DeploymentAction::InstallEditor {
             report(DeploymentActivity {
+                editor_version: Some(vua_orchestrator::PRODUCTION_TARGET),
                 cause: Some("vua.deployment.editor_regional_redirect"),
                 ..DeploymentActivity::from_source(
                     DeploymentPhase::SourceFailed,
                     EditorDownloadSource::Nounitycn,
                 )
+            })?;
+            report(DeploymentActivity {
+                editor_version: Some(CHINA_EDITOR_TARGET),
+                cause: Some("vua.deployment.install_failed"),
+                ..DeploymentActivity::new(DeploymentPhase::InstallationFailed)
             })?;
             return Err("vua.deployment.hub_fallback_required");
         }
@@ -374,6 +400,15 @@ fn exhausted_download_sources_handoff_to_hub_and_replay_does_not_retry() {
     assert_eq!(result["outcome"], "manual_required");
     assert_eq!(result["handoff"], "unity_hub");
     assert_eq!(result["sourceFailures"][0]["source"], "nounitycn");
+    assert_eq!(result["sourceFailures"][0]["editorVersion"], "2022.3.22f1");
+    assert_eq!(
+        result["installationFailures"][0]["editorVersion"],
+        CHINA_EDITOR_TARGET
+    );
+    assert_eq!(
+        result["installationFailures"][0]["cause"],
+        "vua.deployment.install_failed"
+    );
     assert_eq!(
         result["sourceFailures"][0]["cause"],
         "vua.deployment.editor_regional_redirect"

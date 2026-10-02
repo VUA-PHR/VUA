@@ -1,13 +1,14 @@
 # Unity Editor deployment
 
-> Document version: 2.1.0
+> Document version: 2.2.0
 > Status: Accepted
 > Last conformance review: 2026-10-02
 
 For people: choose Avatar editing, review the version, download order and destination, and let VUA
-download and install the global Unity Editor. Mainland-China download networks start with
-[NoUnityCN](https://www.nounitycn.top/); other networks start with Unity's official source. If a
-source fails, VUA tries the other enabled source, then offers installation through Unity Hub.
+download and install Unity Editor. VUA prefers global `2022.3.22f1`, then tries China
+`2022.3.22f1c1` if global acquisition or installation fails, and offers Unity Hub if both fail.
+Within each edition, mainland-China networks start with [NoUnityCN](https://www.nounitycn.top/);
+other networks start with Unity's official source, followed by the other enabled source.
 Settings → Environment & paths contains an enabled-by-default mirror switch. Unity's original
 installer performs installation; the official Unity CLI registers the Editor and handles licensing.
 
@@ -21,16 +22,18 @@ adapter. A source review is supporting work; the deliverable is a working instal
 
 1. Inspect the selected purposes, existing software, Editor installation root and download region.
 2. Acquire the reviewed official Unity CLI when missing. After acquisition, prepare a fresh plan.
-3. For PC Avatar editing, show the source order for global Windows x64 Unity `2022.3.22f1`,
-   changeset `887be4894c44`. Region and the mirror preference are part of the confirmed plan.
+3. For PC Avatar editing, show the global → China edition order and source order for changeset
+   `887be4894c44`. Edition order, region and mirror preference are part of the confirmed plan.
 4. Download the original installer into VUA's local cache. Try each enabled source in the
-   displayed order. Compare Unity's published MD5 and the global Unity signature. Record the
-   local SHA-256 so the acquired bytes can be identified again. If acquisition fails across the
-   enabled sources, finish with a Unity Hub handoff and keep prerequisite readiness false.
+   displayed order. Compare the edition's pinned MD5 and expected Unity publisher signature.
+   Record the local SHA-256 and actual version. Exhaust global attempts before China; exhaust
+   both editions before a Unity Hub handoff.
 5. Run the original installer at the displayed destination. Windows presents its own UAC prompt
    when elevated rights are needed. Preserve the unquoted final `/D=` directory argument required
    by the installer, including installation directories containing spaces.
-6. Inspect the installed `Editor/Unity.exe`, then use the official CLI's `editors add` command
+6. On installation or inspection failure, try the next edition in its own directory. Cancellation,
+   declined elevation or a changed destination stops execution. Inspect the installed
+   `Editor/Unity.exe`, then use the official CLI's `editors add` command
    to register the installation. Refresh the environment panel from the resulting observations.
 7. Guide the user through official account authorization and license choice, then launch an
    actual disposable SDK/MA project. These follow installation as separately observable steps.
@@ -62,12 +65,13 @@ the native installer finishes and the target Editor passes reinspection.
 
 ## Download entry and original artifact
 
-The source order follows the author's 2026-10-01 ruling:
+The following source order is tried for each edition. The author's 2026-10-02 ruling makes
+global → China the outer order; Unity Hub is offered only after both editions fail.
 
 | Download-network region | Mirror switch on | Mirror switch off |
 | --- | --- | --- |
-| Mainland China (`CN`) | NoUnityCN → Unity official → Unity Hub | Unity official → Unity Hub |
-| Other or unknown | Unity official → NoUnityCN → Unity Hub | Unity official → Unity Hub |
+| Mainland China (`CN`) | NoUnityCN → Unity official | Unity official |
+| Other or unknown | Unity official → NoUnityCN | Unity official |
 
 [RegionProbe](../../crates/project-manager/src/unity_download_region.rs) makes one bounded HTTPS
 request to Cloudflare's public trace endpoint and reads only the country category. This observes
@@ -89,19 +93,32 @@ The current global Windows artifact is:
 - Official manifest MD5: `4b5bcea63f3de8377e69d127d3ce4c1d`.
 - Cache: `environment/unity-editor/2022.3.22f1/` beneath VUA's local data directory.
 
+The China fallback uses the corresponding regional download entry and original filename on
+`download.unitychina.cn`. The requested global entry is `887be4894c44`; the observed installed
+c1 product resource identifies its own build as `c3cbd310e76e`.
+Its observed complete artifact has MD5 `9aa1b61f75fc6ad3fe8025bbb7265b64` and a valid signature
+from `优三缔科技（上海）有限公司`. This publisher is admitted only for the pinned China Editor,
+not for CLI/Hub acquisition. Its cache and installation subdirectory is `2022.3.22f1c1`.
+N1 accepts the [development compatibility pair](../compatibility/unity-editor.md) by actual
+executable version, independently of the frozen inspection classifier. Existing global
+installations take priority over c1; an existing usable c1 installation is retained.
+
 VUA continues to use the original Unity executable. Source acquisition is a replaceable adapter.
 Improve its retry, routing and
 progress behavior from actual download runs rather than introducing a general mirror framework
-before the first installation works. Regional replacement redirects switch sources before a
-large download begins; invalid file checks also advance to the next source. After all enabled
-sources fail, the task returns `manual_required` with `handoff: "unity_hub"`. The panel offers
+before the first installation works. During global acquisition, regional redirects switch
+sources before a large download begins. The China attempt admits the regional CDN and checks
+the c1 artifact. Failed source attempts advance within that edition; failed installation
+advances to the next edition. After both editions fail, the task returns `manual_required`
+with `handoff: "unity_hub"`. The panel offers
 `unityhub://2022.3.22f1/887be4894c44` and the official Hub download page. The deep link opens only
 after the user clicks and confirms the external protocol. The user completes Hub installation,
 then prepares a fresh VUA plan. This is an installation handoff, not an automatic success claim.
 
 In a debug build, `VUA_DEV_EDITOR_INSTALLER` can point to an already downloaded local installer.
 This lets the real Provider/task path reuse a browser download during development, with the same
-file checks. It is a process-local development option, separate from renderer inputs. Release
+file checks and edition order. A local c1 artifact is used only at the China attempt. It is a
+process-local development option, separate from renderer inputs. Release
 builds use the confirmed source policy. Interrupted downloads use uniquely named staging files;
 a completed valid cache is reused. An invalid managed cache is retained under a unique rejected
 filename, freeing the download slot for another attempt.
@@ -119,9 +136,9 @@ timeout; resolving the mirror page has a 30-second total timeout. Cancellation a
 progress writes stop at the next acquisition reporting boundary. During native installation,
 cancellation takes effect when the installer returns.
 
-Each failed source retains a bounded cause: source-page change, regional redirect, other redirect,
+Progress identifies the actual edition being attempted. Each failed source retains a bounded cause: source-page change, regional redirect, other redirect,
 HTTP failure, timeout, transfer failure or file-integrity failure. The Hub handoff includes these
-source failures, and the panel exposes them in download details. Raw response bodies, vendor logs
+source failures and versioned installation failures, and the panel exposes them in attempt details. Raw response bodies, vendor logs
 and credentials remain outside task messages.
 
 ## Official tooling and user choices
@@ -157,14 +174,18 @@ next step on this machine. Raw downloads and observations stay in ignored
 On 2026-10-02, the corrected exact-button route ran through the real Provider. The official and
 NoUnityCN requests both reached a regional CDN redirect on this network. The task now retains
 two `editor_regional_redirect` source failures in its Hub handoff. Evidence is in
-`_local_real_machine/n1-direct-button-2026-10-02/`. Continue by comparing the user's browser
-download path/transport and exercising the original installer through the same Provider.
+`_local_real_machine/n1-direct-button-2026-10-02/`. The author's later October 2 ruling admits
+the c1 artifact and changes the next run to global → China → Hub; earlier rejection outcomes
+describe the earlier policy only.
 
 After the first installation, record the actual installed version, registration result and
 destination, then run license/project checks and an Android-module attempt. Follow N1's remaining
 play, account-guide, update/removal, configuration and UI scenarios in small increments.
 
 ## Document changelog
+
+- 2.2.0 (2026-10-02): accept global/China edition fallback, separate artifact/destination identity,
+  and version installation failures and successful task results.
 
 - 2.1.0 (2026-10-02): follow the actual mirror button, report stage/byte activity and source-specific failures, and make invalid managed caches retryable.
 - 2.0.0 (2026-10-01): select region-aware official/NoUnityCN priority, an enabled-by-default mirror setting and Unity Hub handoff; implement the original-installer/official-CLI path and a debug local-file option.

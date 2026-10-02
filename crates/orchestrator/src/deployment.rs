@@ -15,6 +15,29 @@ pub const UNITY_OFFICIAL_EDITOR_SOURCE: &str =
     "https://unity.com/releases/editor/whats-new/2022.3.22f1";
 pub const UNITY_HUB_INSTALL_LINK: &str = "unityhub://2022.3.22f1/887be4894c44";
 
+/// Author-approved N1 development compatibility pair. Keep the observed identity;
+/// this admission rule does not rewrite the frozen Editor-inspection classification.
+pub const CHINA_EDITOR_TARGET: &str = "2022.3.22f1c1";
+pub fn accepted_development_editor(version: &str) -> bool {
+    matches!(version, crate::PRODUCTION_TARGET | CHINA_EDITOR_TARGET)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EditorEdition {
+    Global,
+    China,
+}
+
+impl EditorEdition {
+    pub fn version(self) -> &'static str {
+        match self {
+            Self::Global => crate::PRODUCTION_TARGET,
+            Self::China => CHINA_EDITOR_TARGET,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum DownloadRegion {
@@ -39,6 +62,7 @@ pub struct EditorDownloadPolicy {
     pub region: DownloadRegion,
     pub mirrors_enabled: bool,
     pub sources: Vec<EditorDownloadSource>,
+    pub editor_editions: Vec<EditorEdition>,
     pub hub_fallback_url: String,
 }
 
@@ -59,6 +83,7 @@ impl EditorDownloadPolicy {
             region,
             mirrors_enabled,
             sources,
+            editor_editions: vec![EditorEdition::Global, EditorEdition::China],
             hub_fallback_url: UNITY_HUB_INSTALL_LINK.into(),
         }
     }
@@ -227,6 +252,8 @@ pub enum DeploymentInstallerKind {
 pub struct DeploymentActivity {
     pub phase: DeploymentPhase,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub editor_version: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<EditorDownloadSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub completed_bytes: Option<u64>,
@@ -246,6 +273,7 @@ pub enum DeploymentPhase {
     Inspecting,
     Registering,
     SourceFailed,
+    InstallationFailed,
     CacheRejected,
 }
 
@@ -253,6 +281,7 @@ impl DeploymentActivity {
     pub fn new(phase: DeploymentPhase) -> Self {
         Self {
             phase,
+            editor_version: None,
             source: None,
             completed_bytes: None,
             total_bytes: None,
@@ -565,10 +594,14 @@ impl DeploymentService {
                         },
                         action => {
                             let mut source_failures = Vec::new();
+                            let mut installation_failures = Vec::new();
                             let result = adapter.install(&intent, action, fresh.installer.as_ref().ok_or_else(|| deployment_error("vua.deployment.installer_unavailable", &correlation))?, &mut |activity| {
                                 if ctx.check_cancel() { return Err("vua.deployment.cancelled"); }
                                 if matches!(activity.phase, DeploymentPhase::SourceFailed) {
                                     source_failures.push(serde_json::to_value(&activity).expect("activity serializes"));
+                                }
+                                if matches!(activity.phase, DeploymentPhase::InstallationFailed) {
+                                    installation_failures.push(serde_json::to_value(&activity).expect("activity serializes"));
                                 }
                                 let mut payload = progress(step, index, fresh.steps.len(), "started");
                                 let facts = serde_json::to_value(activity).expect("activity serializes");
@@ -583,6 +616,7 @@ impl DeploymentService {
                                 return Ok(TaskExit::Done(serde_json::json!({"schemaVersion": DEPLOYMENT_SCHEMA,
                                     "operation":"environment.executeDeployment", "outcome":"manual_required",
                                     "sourceFailures":source_failures,
+                                    "installationFailures":installation_failures,
                                     "handoff":"unity_hub", "handoffUrl":UNITY_HUB_INSTALL_LINK,
                                     "nextStep": {"component":"unity_hub", "action":"manual_install", "reason":"missing",
                                         "location":null, "version":null, "officialUrl":"https://unity.com/download"},
@@ -601,6 +635,7 @@ impl DeploymentService {
                 if !after.prerequisites_ready { return Err(deployment_error("vua.deployment.verification_failed", &correlation)); }
                 Ok(TaskExit::Done(serde_json::json!({"schemaVersion": DEPLOYMENT_SCHEMA,
                     "operation": "environment.executeDeployment", "outcome": "prerequisites_verified",
+                    "editor": after.steps.iter().find(|s| s.component == "unity_editor"),
                     "prerequisitesReady": true, "functionalVerification": "not_run"})))
             }) }, "environment.executeDeployment", command_id, &fingerprint)
     }

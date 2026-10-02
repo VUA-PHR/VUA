@@ -1,7 +1,7 @@
 # VUA product boundary
 
 
-> Document version: 2.5.0
+> Document version: 2.6.0
 > Status: Accepted
 > Scope: Entire VUA product
 > Updated: 2026-10-02
@@ -58,8 +58,10 @@ records.
    local-package-registry faces of `settings.json`) are the same file shared with VCC/ALCOM;
    VUA may read and write it, and changes are visible to both sides immediately — this exception
    covers the settings face only; the project-file face keeps U3 unchanged.
-6. **Unity Bridge:** a versioned deterministic protocol whose production target is exactly global
-   Unity `2022.3.22f1`; historical editor projects enter through the documented migration boundary.
+6. **Unity Bridge:** a versioned deterministic protocol using the
+   [Editor compatibility policy](compatibility/unity-editor.md). During development, global
+   `2022.3.22f1` and China `2022.3.22f1c1` form the accepted pair; historical projects enter
+   through the documented migration boundary. Existing frozen protocol migrations remain explicit.
 7. **Desktop overlay:** guidance, status, and runtime information through stable application
    services. **VR overlay:** remains unscheduled outside the active
    [N acceptance sequence](development-outline.md).
@@ -234,12 +236,19 @@ See the [N1 delivery plan](development/n1-delivery-plan.md).
 ## Unity deployment
 
 For N1, detect the download-network region first: mainland China prefers NoUnityCN; other or
-unknown regions prefer Unity's official source (user ruling, 2026-10-01). Try the other enabled
-source if acquisition fails, then guide installation through Unity Hub. Settings includes an
-enabled-by-default mirror switch; when off, use only the official source and Hub fallback.
-Download the exact supported global Editor onto the user's machine, install it with Unity's
-original installer, and register it with the official standalone CLI. Hub is optional until a
-fallback is needed. VUA does not bundle Unity CLI/Editor or operate its own Unity mirror. Users choose
+unknown regions prefer Unity's official source. Settings includes an enabled-by-default mirror
+switch; when off, use only Unity's official download sources.
+
+Prefer an existing usable global `2022.3.22f1`, then an existing China `2022.3.22f1c1`.
+When installation is needed, try the global edition using the enabled sources, then the China
+edition if global acquisition or installation fails; hand off to Unity Hub after both fail.
+The author accepts this exact f1/c1 pair as equivalent for current development (2026-10-02),
+informed by community reports and their own inquiries. Preserve the observed full version in
+plans, installation records and later Build Records; do not rename c1 as f1. Use small real
+project trials to fix actual compatibility issues as they arise.
+
+Install the original Unity installer on the user's machine and register the Editor with the
+official standalone CLI. VUA does not bundle Unity CLI/Editor or operate its own Unity mirror. Users choose
 licenses and accept agreements themselves, and Unity's tooling keeps its own credentials. The
 [deployment direction](architecture/unity-deployment.md) owns the installation and evidence path;
 this does not widen first-delivery account storage or authentication automation.
@@ -325,8 +334,8 @@ User-adopted implementation boundary (2026-09-29), informed by the
 - Developers may run local integration and smoke validation with Unity assets they lawfully obtained
   or purchased. Those assets, user projects, test configuration, and outputs stay local and do not
   enter the repository or cloud-CI artifacts.
-- [Unity editor compatibility](compatibility/unity-editor.md) defines global `2022.3.22f1` as the
-  sole production target. `2019.4.31f1` and `2022.3.6f1` are migration sources. Other Unity versions
+- [Unity editor compatibility](compatibility/unity-editor.md) defines the development pair
+  `2022.3.22f1` / `2022.3.22f1c1`. `2019.4.31f1` and `2022.3.6f1` are migration sources. Other Unity versions
   report their exact difference from the production target while project files remain unchanged;
   Tuanjie Engine is currently unsupported.
 - **ALCOM/VCC project compatibility (user ruling U3, 2026-09-08, after third-party arbitration
@@ -440,6 +449,8 @@ unchanged; this ruling is not a new product release. Runtime-tool deployment is 
 plugin execution and a marketplace still require their separately accepted security decisions.
 
 ## Document changelog
+
+- 2.6.0 (2026-10-02): accept the f1/c1 development pair and global → China → Hub deployment order while retaining actual identities.
 
 - 2.5.0 (2026-10-02): adopt model-driven official-first headset routes, observable silent installs
   and N1 activation/network guidance; make WMR first-delivery support conditional on investigation.

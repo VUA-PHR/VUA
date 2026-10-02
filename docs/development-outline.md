@@ -1,6 +1,6 @@
 # VUA development sequence
 
-> Document version: 3.6.0
+> Document version: 3.7.0
 > Status: Accepted
 > Updated: 2026-10-02
 > Authority: User rulings of 2026-09-28 through 2026-10-02, including release decoupling and N1 device/network onboarding
@@ -123,7 +123,8 @@ a general environment version manager are not prerequisites.
 | Network and activation | Guide regional service access and headset activation. Mainland-China suggestions include dedicated accelerators with a no-financial-relationship disclosure and an existing-service/skip choice. Check target-service reachability separately from LAN streaming; exercise headset update, phone login and pairing for the selected Quest activation route |
 
 First local path: keep existing SteamVR/PICO/VRChat, choose PC Avatar editing, install global
-Unity 2022.3.22f1 through the [official standalone CLI](architecture/unity-deployment.md)
+Unity 2022.3.22f1 (China 2022.3.22f1c1 fallback) through the
+[native installer and official CLI](architecture/unity-deployment.md)
 (Hub optional), complete user licensing and necessary components, resolve actual SDK/MA dependencies, and open the test
 project. Exercise each declared purpose on an applicable environment; record missing equipment
 as blocked rather than inventing results. WMR may be excluded from first delivery after the
@@ -354,6 +355,8 @@ Prioritize the first real blocker, repair and rerun it, then expand. Record boun
 do not turn documentation completeness, speculative coverage, or idle agent activity into goals.
 
 ## Document changelog
+
+- 3.7.0 (2026-10-02): admit the development f1/c1 pair for the first creator deployment path, with global preference and Hub fallback after both editions fail.
 
 - 3.6.0 (2026-10-02): expand N1 acceptance to model-first official routes, installation activity,
   device/service accounts and regional activation/connectivity; record the WMR investigation exception.

@@ -167,7 +167,16 @@ impl UnityInstallProbe {
             let path = application
                 .to_str()
                 .ok_or("vua.deployment.invalid_location")?;
-            report(DeploymentActivity::new(DeploymentPhase::Registering))?;
+            report(DeploymentActivity {
+                editor_version: if destination
+                    .ends_with(vua_orchestrator::deployment::CHINA_EDITOR_TARGET)
+                {
+                    Some(vua_orchestrator::deployment::CHINA_EDITOR_TARGET)
+                } else {
+                    Some(vua_orchestrator::PRODUCTION_TARGET)
+                },
+                ..DeploymentActivity::new(DeploymentPhase::Registering)
+            })?;
             let outcome = self.run(
                 exe,
                 &["--no-log-proxy", "--format", "json", "editors", "add", path],

@@ -11,7 +11,7 @@ use std::{
 };
 use vua_orchestrator::deployment::{
     DeploymentActivity, DeploymentPhase, DeploymentReporter, EditorDownloadPolicy,
-    EditorDownloadSource,
+    EditorDownloadSource, EditorEdition,
 };
 use vua_orchestrator::{ProcessError, ProcessRunner, ProcessSpec};
 
@@ -19,12 +19,25 @@ pub(super) const SOURCE_PAGE: &str = vua_orchestrator::deployment::UNITY_EDITOR_
 const EDITOR_URL: &str = "https://download.unity3d.com/download_unity/887be4894c44/Windows64EditorInstaller/UnitySetup64-2022.3.22f1.exe";
 // Unity Release API / CLI dry-run for the exact global Windows x64 changeset.
 const EDITOR_MD5: &str = "4b5bcea63f3de8377e69d127d3ce4c1d";
+const CHINA_EDITOR_URL: &str = "https://download.unitychina.cn/download_unity/887be4894c44/Windows64EditorInstaller/UnitySetup64-2022.3.22f1.exe";
+// Observed regional artifact returned for this global download entry. Its own build is c1.
+const CHINA_EDITOR_MD5: &str = "9aa1b61f75fc6ad3fe8025bbb7265b64";
 const MAX_EDITOR_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 const DOWNLOAD_ERROR: &str = "vua.deployment.editor_download_failed";
 const INTEGRITY_ERROR: &str = "vua.deployment.editor_integrity_failed";
 
-fn cached_installer(data_root: &Path) -> PathBuf {
-    data_root.join("environment/unity-editor/2022.3.22f1/UnitySetup64-2022.3.22f1.exe")
+fn cached_installer(data_root: &Path, edition: EditorEdition) -> PathBuf {
+    data_root
+        .join("environment/unity-editor")
+        .join(edition.version())
+        .join("UnitySetup64-2022.3.22f1.exe")
+}
+
+fn expected_md5(edition: EditorEdition) -> &'static str {
+    match edition {
+        EditorEdition::Global => EDITOR_MD5,
+        EditorEdition::China => CHINA_EDITOR_MD5,
+    }
 }
 
 /// A debug-only local file reuses a browser download during real-machine development.
@@ -45,17 +58,54 @@ pub(super) fn install_editor(
     policy: &EditorDownloadPolicy,
     report: &mut DeploymentReporter<'_>,
 ) -> Result<PathBuf, &'static str> {
-    let destination = Path::new(editor_root).join(vua_orchestrator::PRODUCTION_TARGET);
-    if !crate::unity_install::safe_install_root(&destination) || destination.exists() {
-        return Err("vua.deployment.plan_changed");
-    }
-    let installer = match development_installer() {
-        Some(file) => {
-            verify_installer(&file, report)?;
-            file
+    try_editions(&policy.editor_editions, report, &mut |edition, report| {
+        let installer = acquire_installer(data_root, policy, edition, report)?;
+        install_verified_editor(editor_root, runner, &installer, edition, report)
+    })
+}
+
+/// Global acquisition/installation failures advance to China; user cancellation and
+/// changed destinations stop the task. Separate directories preserve partial installs.
+fn try_editions(
+    editions: &[EditorEdition],
+    report: &mut DeploymentReporter<'_>,
+    attempt: &mut dyn FnMut(
+        EditorEdition,
+        &mut DeploymentReporter<'_>,
+    ) -> Result<PathBuf, &'static str>,
+) -> Result<PathBuf, &'static str> {
+    for edition in editions.iter().copied() {
+        let mut edition_report = |mut activity: DeploymentActivity| {
+            activity.editor_version = Some(edition.version());
+            report(activity)
+        };
+        match attempt(edition, &mut edition_report) {
+            Ok(destination) => return Ok(destination),
+            Err(
+                error @ ("vua.deployment.cancelled"
+                | "vua.deployment.plan_changed"
+                | "vua.deployment.invalid_location"
+                | "vua.deployment.elevation_declined"
+                | "vua.deployment.elevation_required"),
+            ) => return Err(error),
+            Err("vua.deployment.hub_fallback_required") => {} // Source failures were already reported.
+            Err(cause) => edition_report(DeploymentActivity {
+                cause: Some(cause),
+                ..DeploymentActivity::new(DeploymentPhase::InstallationFailed)
+            })?,
         }
-        None => acquire_installer(data_root, policy, report)?,
-    };
+    }
+    Err("vua.deployment.hub_fallback_required")
+}
+
+fn install_verified_editor(
+    editor_root: &str,
+    runner: &dyn ProcessRunner,
+    installer: &Path,
+    edition: EditorEdition,
+    report: &mut DeploymentReporter<'_>,
+) -> Result<PathBuf, &'static str> {
+    let destination = Path::new(editor_root).join(edition.version());
     // Downloads can take minutes. Recheck immediately before the installer so a
     // newly created installation or redirected ancestor triggers a fresh plan.
     if !crate::unity_install::safe_install_root(&destination) || destination.exists() {
@@ -64,7 +114,7 @@ pub(super) fn install_editor(
     // /D must be the final *unquoted* tail, including directories containing spaces.
     // ProcessRunner owns that Windows quoting behavior and all process lifetime handling.
     let spec = ProcessSpec {
-        executable: installer,
+        executable: installer.to_path_buf(),
         args: vec!["/S".into()],
         windows_nsis_install_dir: Some(destination.clone()),
         timeout: Duration::from_secs(1800),
@@ -87,9 +137,7 @@ pub(super) fn install_editor(
     }
     report(DeploymentActivity::new(DeploymentPhase::Inspecting))?;
     match crate::verify_editor_path_system(&destination) {
-        crate::EditorPathVerdict::Verified(identity)
-            if identity.classification == vua_orchestrator::EditorClass::ProductionTarget =>
-        {
+        crate::EditorPathVerdict::Verified(identity) if identity.version == edition.version() => {
             Ok(destination)
         }
         _ => Err("vua.deployment.verification_failed"),
@@ -99,9 +147,17 @@ pub(super) fn install_editor(
 fn acquire_installer(
     data_root: &Path,
     policy: &EditorDownloadPolicy,
+    edition: EditorEdition,
     report: &mut DeploymentReporter<'_>,
 ) -> Result<PathBuf, &'static str> {
-    let target = cached_installer(data_root);
+    if let Some(file) = development_installer() {
+        match verify_installer(&file, edition, report) {
+            Ok(_) => return Ok(file),
+            Err(INTEGRITY_ERROR) => {} // May be the other edition; continue this edition's sources.
+            Err(error) => return Err(error),
+        }
+    }
+    let target = cached_installer(data_root, edition);
     let parent = target.parent().ok_or(DOWNLOAD_ERROR)?;
     if !crate::unity_install::safe_install_root(parent) {
         return Err("vua.deployment.invalid_location");
@@ -112,7 +168,7 @@ fn acquire_installer(
         .map_err(|_| DOWNLOAD_ERROR)?
         .as_nanos();
     if target.exists() {
-        match verify_installer(&target, report) {
+        match verify_installer(&target, edition, report) {
             Ok(_) => return Ok(target),
             Err(INTEGRITY_ERROR) => {
                 // Preserve the rejected cache for local diagnosis and leave the download
@@ -134,14 +190,7 @@ fn acquire_installer(
     let client = reqwest::Client::builder()
         .https_only(true)
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) VUA-N1")
-        .redirect(reqwest::redirect::Policy::custom(|attempt| {
-            // Switch routes before downloading gigabytes of a regional replacement.
-            if attempt.previous().len() >= 6 || is_regional_redirect(attempt.url()) {
-                attempt.stop()
-            } else {
-                attempt.follow()
-            }
-        }))
+        .redirect(editor_redirect_policy(edition))
         .connect_timeout(Duration::from_secs(30))
         .read_timeout(Duration::from_secs(60))
         .timeout(Duration::from_secs(7200))
@@ -153,7 +202,11 @@ fn acquire_installer(
             *source,
         ))?;
         let url = match source {
-            EditorDownloadSource::Official => EDITOR_URL.to_owned(),
+            EditorDownloadSource::Official => match edition {
+                EditorEdition::Global => EDITOR_URL,
+                EditorEdition::China => CHINA_EDITOR_URL,
+            }
+            .to_owned(),
             EditorDownloadSource::Nounitycn => match runtime.block_on(mirror_link(&client)) {
                 Ok(url) => url,
                 Err(error) => {
@@ -171,7 +224,7 @@ fn acquire_installer(
         let owned = OwnedDownload(stage.clone());
         let downloaded = runtime.block_on(download(&client, &url, *source, &mut file, report));
         drop(file);
-        match downloaded.and_then(|()| verify_installer(&stage, report)) {
+        match downloaded.and_then(|()| verify_installer(&stage, edition, report)) {
             Ok(sha256) => {
                 // Publish without replacing another file. Each attempt owns only its stage.
                 std::fs::hard_link(&stage, &target).map_err(|_| DOWNLOAD_ERROR)?;
@@ -183,8 +236,8 @@ fn acquire_installer(
                     EditorDownloadSource::Nounitycn => SOURCE_PAGE,
                 };
                 let record = serde_json::json!({"source":source, "sourcePage":source_page,
-                    "downloadRoute":url, "version":vua_orchestrator::PRODUCTION_TARGET,
-                    "changeset":"887be4894c44", "officialMd5":EDITOR_MD5, "fileSha256":sha256});
+                    "downloadRoute":url, "version":edition.version(), "edition":edition,
+                    "requestedChangeset":"887be4894c44", "expectedMd5":expected_md5(edition), "fileSha256":sha256});
                 std::fs::write(
                     parent.join("acquisition.json"),
                     serde_json::to_vec_pretty(&record).map_err(|_| DOWNLOAD_ERROR)?,
@@ -340,6 +393,19 @@ fn is_regional_redirect(url: &reqwest::Url) -> bool {
         .is_some_and(|host| host == "unitychina.cn" || host.ends_with(".unitychina.cn"))
 }
 
+fn editor_redirect_policy(edition: EditorEdition) -> reqwest::redirect::Policy {
+    reqwest::redirect::Policy::custom(move |attempt| {
+        // Exhaust global sources first. The China attempt admits the regional CDN.
+        if attempt.previous().len() >= 6
+            || (edition == EditorEdition::Global && is_regional_redirect(attempt.url()))
+        {
+            attempt.stop()
+        } else {
+            attempt.follow()
+        }
+    })
+}
+
 /// The initial source is a version index, so use the actual href rather than guessing a
 /// new version or accepting an arbitrary page-selected executable. HTML stays unexecuted.
 fn selected_download(html: &str) -> Option<&str> {
@@ -354,6 +420,7 @@ fn selected_download(html: &str) -> Option<&str> {
 
 fn verify_installer(
     path: &Path,
+    edition: EditorEdition,
     report: &mut DeploymentReporter<'_>,
 ) -> Result<String, &'static str> {
     let mut file = std::fs::File::open(path).map_err(|_| INTEGRITY_ERROR)?;
@@ -394,8 +461,8 @@ fn verify_installer(
         }
     }
     if total != size
-        || format!("{:x}", md5.finalize()) != EDITOR_MD5
-        || !crate::deployment_trust::trusted_unity_executable(path)
+        || format!("{:x}", md5.finalize()) != expected_md5(edition)
+        || !crate::deployment_trust::trusted_editor_installer(path, edition == EditorEdition::China)
     {
         return Err(INTEGRITY_ERROR);
     }
@@ -422,6 +489,130 @@ impl Drop for OwnedDownload {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn regional_http_redirect_is_followed_only_for_the_china_attempt() {
+        for edition in [EditorEdition::Global, EditorEdition::China] {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let address = listener.local_addr().unwrap();
+            let server = std::thread::spawn(move || {
+                let expected_requests = if edition == EditorEdition::Global {
+                    1
+                } else {
+                    2
+                };
+                for index in 0..expected_requests {
+                    let (mut socket, _) = listener.accept().unwrap();
+                    socket
+                        .set_read_timeout(Some(Duration::from_secs(5)))
+                        .unwrap();
+                    let mut request = Vec::new();
+                    let mut buffer = [0; 512];
+                    while !request.windows(4).any(|b| b == b"\r\n\r\n") {
+                        let n = socket.read(&mut buffer).unwrap();
+                        assert!(n > 0);
+                        request.extend_from_slice(&buffer[..n]);
+                    }
+                    let response = if index == 0 {
+                        format!("HTTP/1.1 302 Found\r\nLocation: http://download.unitychina.cn:{}/editor\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", address.port())
+                    } else {
+                        "HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\ntest"
+                            .to_owned()
+                    };
+                    socket.write_all(response.as_bytes()).unwrap();
+                }
+            });
+            let runtime = tokio::runtime::Runtime::new().unwrap();
+            let client = reqwest::Client::builder()
+                .no_proxy()
+                .resolve("download.unitychina.cn", address)
+                .redirect(editor_redirect_policy(edition))
+                .timeout(Duration::from_secs(5))
+                .build()
+                .unwrap();
+            let response = runtime
+                .block_on(async { client.get(format!("http://{address}/entry")).send().await })
+                .unwrap();
+            assert_eq!(
+                response.status(),
+                if edition == EditorEdition::Global {
+                    reqwest::StatusCode::FOUND
+                } else {
+                    reqwest::StatusCode::OK
+                }
+            );
+            server.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn global_success_does_not_attempt_china() {
+        let mut attempts = Vec::new();
+        let result = try_editions(
+            &[EditorEdition::Global, EditorEdition::China],
+            &mut |_| Ok(()),
+            &mut |edition, _| {
+                attempts.push(edition);
+                Ok(PathBuf::from(edition.version()))
+            },
+        );
+        assert_eq!(result.unwrap(), PathBuf::from("2022.3.22f1"));
+        assert_eq!(attempts, [EditorEdition::Global]);
+    }
+
+    #[test]
+    fn failed_global_install_uses_china_and_preserves_versioned_failure() {
+        let mut events = Vec::new();
+        let result = try_editions(
+            &[EditorEdition::Global, EditorEdition::China],
+            &mut |event| {
+                events.push(event);
+                Ok(())
+            },
+            &mut |edition, _| {
+                if edition == EditorEdition::Global {
+                    Err("vua.deployment.install_failed")
+                } else {
+                    Ok(PathBuf::from(edition.version()))
+                }
+            },
+        );
+        assert_eq!(result.unwrap(), PathBuf::from("2022.3.22f1c1"));
+        assert_eq!(events[0].editor_version, Some("2022.3.22f1"));
+        assert_eq!(events[0].cause, Some("vua.deployment.install_failed"));
+    }
+
+    #[test]
+    fn both_editions_failing_hand_off_to_hub_but_cancellation_stops_immediately() {
+        for cause in [
+            "vua.deployment.hub_fallback_required",
+            "vua.deployment.install_failed",
+            "vua.deployment.cancelled",
+            "vua.deployment.elevation_declined",
+            "vua.deployment.plan_changed",
+        ] {
+            let mut attempts = Vec::new();
+            let result = try_editions(
+                &[EditorEdition::Global, EditorEdition::China],
+                &mut |_| Ok(()),
+                &mut |edition, _| {
+                    attempts.push(edition);
+                    Err(cause)
+                },
+            );
+            let falls_back = cause == "vua.deployment.install_failed"
+                || cause == "vua.deployment.hub_fallback_required";
+            assert_eq!(attempts.len(), if falls_back { 2 } else { 1 });
+            assert_eq!(
+                result,
+                Err(if falls_back {
+                    "vua.deployment.hub_fallback_required"
+                } else {
+                    cause
+                })
+            );
+        }
+    }
 
     /// Exercise HTTP headers, actual transfer accounting and route failure without
     /// downloading an Editor or touching a user's network configuration.
@@ -490,7 +681,9 @@ mod tests {
         std::fs::write(&path, b"test").unwrap();
         let _cleanup = OwnedDownload(path.clone());
         assert_eq!(
-            verify_installer(&path, &mut |_| Err("vua.deployment.cancelled")),
+            verify_installer(&path, EditorEdition::Global, &mut |_| Err(
+                "vua.deployment.cancelled"
+            )),
             Err("vua.deployment.cancelled")
         );
     }
@@ -526,7 +719,7 @@ mod tests {
             std::env::temp_dir().join(format!("vua-editor-integrity-{}.exe", std::process::id()));
         std::fs::write(&file, b"synthetic incomplete installer").unwrap();
         assert_eq!(
-            verify_installer(&file, &mut |_| Ok(())),
+            verify_installer(&file, EditorEdition::Global, &mut |_| Ok(())),
             Err(INTEGRITY_ERROR)
         );
         assert_eq!(

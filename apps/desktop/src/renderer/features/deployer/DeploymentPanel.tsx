@@ -93,11 +93,13 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
   };
   const disabled = busy || active;
   const outcome = task?.result?.outcome;
+  const installedEditor = task?.result?.editor;
+  const installedVersion = typeof installedEditor === "object" && installedEditor !== null && "version" in installedEditor && typeof installedEditor.version === "string" ? installedEditor.version : null;
   const failedComponent = task?.error?.params?.component;
-  const sourceFailures = Array.isArray(task?.result?.sourceFailures) ? task.result.sourceFailures.flatMap(value => {
+  const sourceFailures = [task?.result?.sourceFailures, task?.result?.installationFailures].flatMap(values => Array.isArray(values) ? values : []).flatMap(value => {
     const p = typeof value === "object" && value !== null ? readDeploymentProgress({ ...value, operation: "environment.executeDeployment", component: "unity_editor", action: "install_editor" }) : null;
-    return p?.phase === "source_failed" ? [p] : [];
-  }) : [];
+    return p?.phase === "source_failed" || p?.phase === "installation_failed" ? [p] : [];
+  });
   return <Card className="vua-deployment">
     <h2 className="vua-title">{copy.title}</h2>
     <p>{copy.description}</p>
@@ -114,7 +116,8 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
     {plan !== null ? <>
       {plan.downloadPolicy !== undefined ? <p className="vua-caption">
         {copy.downloadRegion}{": "}{copy.downloadRegions[plan.downloadPolicy.region]}<br />
-        {copy.downloadOrder}{": "}{plan.downloadPolicy.sources.map(source => copy.downloadSources[source]).join(" → ")}{" → Unity Hub"}
+        {copy.downloadOrder}{": "}{plan.downloadPolicy.sources.map(source => copy.downloadSources[source]).join(" → ")}<br />
+        {plan.downloadPolicy.editorEditions !== undefined ? copy.editorEditionOrder : null}
       </p> : null}
       <ol>{plan.steps.map(s => <li key={s.component}>
         <strong>{copy.components[s.component as keyof typeof copy.components]}</strong>{": "}{copy.actions[s.action]}
@@ -130,7 +133,7 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
     {task !== null ? <div role="status" aria-live="polite">
       <p>{task.recoveryDisposition === "inspect_required" ? copy.inspectRequired : copy.states[task.state]}</p>
       {step !== null ? <>
-        <p>{copy.components[step.component as keyof typeof copy.components]}{": "}{copy.phases[step.phase]}{step.source === undefined ? "" : ` (${copy.downloadSources[step.source]})`}</p>
+        <p>{copy.components[step.component as keyof typeof copy.components]}{": "}{copy.phases[step.phase]}{step.editorVersion === undefined ? "" : ` — ${step.editorVersion}`}{step.source === undefined ? "" : ` (${copy.downloadSources[step.source]})`}</p>
         {step.completedBytes !== undefined ? <p>{copy.transferred}{": "}{(step.completedBytes / 1048576).toFixed(1)}{step.totalBytes === undefined ? "" : ` / ${(step.totalBytes / 1048576).toFixed(1)}`} MiB</p> : null}
         {step.completedBytes !== undefined && step.totalBytes !== undefined ? <progress aria-label={copy.phases[step.phase]} value={step.completedBytes} max={step.totalBytes} /> : null}
         {step.phase === "installing" ? <p className="vua-caption">{copy.installingHint}</p> : null}
@@ -142,11 +145,11 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
       {task.error?.code === "vua.deployment.vendor_result_unreadable" ? <p>{copy.vendorResultUnreadable}</p> : null}
       {outcome === "manual_required" && task.result?.handoff === "unity_hub" && task.result?.handoffUrl === UNITY_HUB_INSTALL_LINK ? <>
         <p>{copy.hubFallback}</p>
-        {sourceFailures.length > 0 ? <details><summary>{copy.sourceFailures}</summary><ul>{sourceFailures.map((failure, index) => <li key={index}>{copy.downloadSources[failure.source!]}{": "}<code>{failure.cause}</code></li>)}</ul></details> : null}
+        {sourceFailures.length > 0 ? <details><summary>{copy.sourceFailures}</summary><ul>{sourceFailures.map((failure, index) => <li key={index}>{failure.editorVersion}{" "}{failure.source === undefined ? copy.phases[failure.phase] : copy.downloadSources[failure.source]}{": "}<code>{failure.cause}</code></li>)}</ul></details> : null}
         <Button onClick={() => { void openExternalUrl(UNITY_HUB_INSTALL_LINK); }}>{copy.openHub}</Button>
         <Button variant="subtle" onClick={() => { void openExternalUrl("https://unity.com/download"); }}>{copy.getHub}</Button>
       </> : outcome === "manual_required" ? <p>{copy.manualRequired}</p> : null}
-      {outcome === "prerequisites_verified" ? <p>{copy.verified}</p> : null}
+      {outcome === "prerequisites_verified" ? <p>{copy.verified}{installedVersion === null ? null : <><br />{copy.components.unity_editor}{": "}<code>{installedVersion}</code></>}</p> : null}
       {active && !task.cancellationRequested ? <Button disabled={busy} onClick={() => {
         setBusy(true); void port.cancel(task.taskId, task.revision).catch(() => setError(copy.cancelFailed)).finally(() => setBusy(false));
       }}>{copy.cancel}</Button> : null}

@@ -13,6 +13,8 @@ export interface EditorDownloadPolicy {
   readonly region: "china_mainland" | "other" | "unknown";
   readonly mirrorsEnabled: boolean;
   readonly sources: readonly ("official" | "nounitycn")[];
+  /** Absent only in older Candidate plans. New plans bind this order to consent. */
+  readonly editorEditions?: readonly ["global", "china"];
   readonly hubFallbackUrl: typeof UNITY_HUB_INSTALL_LINK;
 }
 export type DeploymentPresence = "verified" | "missing" | "unsuitable" | "detection_failed";
@@ -56,12 +58,13 @@ export interface DeploymentExecuteParams extends DeploymentPlanParams {
   readonly confirmedDigest: string;
 }
 
-export const DEPLOYMENT_PHASES = ["started", "resolving_source", "downloading", "verifying", "installing", "inspecting", "registering", "source_failed", "cache_rejected", "verified"] as const;
+export const DEPLOYMENT_PHASES = ["started", "resolving_source", "downloading", "verifying", "installing", "inspecting", "registering", "source_failed", "installation_failed", "cache_rejected", "verified"] as const;
 export interface DeploymentProgress {
   readonly component: string;
   readonly action: DeploymentStep["action"];
   readonly phase: typeof DEPLOYMENT_PHASES[number];
   readonly source?: "official" | "nounitycn";
+  readonly editorVersion?: "2022.3.22f1" | "2022.3.22f1c1";
   readonly completedBytes?: number;
   readonly totalBytes?: number;
   readonly cause?: string;
@@ -75,14 +78,17 @@ export function readDeploymentProgress(v: unknown): DeploymentProgress | null {
     || typeof v.action !== "string" || !["retain", "manual_install", "inspect", "install_editor", "add_android_modules", "install_unity_cli"].includes(v.action)
     || !DEPLOYMENT_PHASES.some(p => p === v.phase)
     || (v.source !== undefined && v.source !== "official" && v.source !== "nounitycn")
+    || (v.editorVersion !== undefined && v.editorVersion !== "2022.3.22f1" && v.editorVersion !== "2022.3.22f1c1")
     || (v.cause !== undefined && (typeof v.cause !== "string" || !/^vua\.deployment\.[a-z_]{1,64}$/.test(v.cause)))) return null;
   for (const key of ["completedBytes", "totalBytes"] as const) {
     if (v[key] !== undefined && (typeof v[key] !== "number" || !Number.isSafeInteger(v[key]) || v[key] < 0)) return null;
   }
   if (typeof v.totalBytes === "number" && (v.totalBytes === 0 || typeof v.completedBytes !== "number" || v.completedBytes > v.totalBytes)) return null;
   if (v.phase === "source_failed" && (v.source === undefined || v.cause === undefined)) return null;
+  if (v.phase === "installation_failed" && (v.editorVersion === undefined || v.cause === undefined)) return null;
   return { component: v.component, action: v.action as DeploymentStep["action"], phase: v.phase as DeploymentProgress["phase"],
     ...(v.source === undefined ? {} : { source: v.source }),
+    ...(v.editorVersion === undefined ? {} : { editorVersion: v.editorVersion }),
     ...(v.completedBytes === undefined ? {} : { completedBytes: v.completedBytes as number }),
     ...(v.totalBytes === undefined ? {} : { totalBytes: v.totalBytes as number }),
     ...(v.cause === undefined ? {} : { cause: v.cause as string }) };
@@ -158,7 +164,8 @@ export function isDeploymentPlanResult(v: unknown): v is DeploymentPlanResult {
 }
 
 function validDownloadPolicy(v: unknown, intent: DeploymentIntent): v is EditorDownloadPolicy {
-  if (!record(v) || !keys(v, ["region", "mirrorsEnabled", "sources", "hubFallbackUrl"])) return false;
+  if (!record(v) || !keys(v, ["region", "mirrorsEnabled", "sources", "hubFallbackUrl", ...(Object.hasOwn(v, "editorEditions") ? ["editorEditions"] : [])])) return false;
+  if (v.editorEditions !== undefined && (!Array.isArray(v.editorEditions) || v.editorEditions.length !== 2 || v.editorEditions[0] !== "global" || v.editorEditions[1] !== "china")) return false;
   if (!["china_mainland", "other", "unknown"].includes(String(v.region))
     || typeof v.mirrorsEnabled !== "boolean" || v.mirrorsEnabled !== (intent.useMirrors !== false)
     || v.hubFallbackUrl !== UNITY_HUB_INSTALL_LINK || !Array.isArray(v.sources)) return false;

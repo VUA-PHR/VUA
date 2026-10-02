@@ -16,6 +16,11 @@ describe("deployment v0.1 closed boundary", () => {
       expect(readDeploymentProgress({ ...facts, ...change })).toBeNull();
     }
     expect(readDeploymentProgress({ ...facts, phase: "source_failed", cause: "vua.deployment.editor_regional_redirect" })?.cause).toBe("vua.deployment.editor_regional_redirect");
+    expect(readDeploymentProgress({ ...facts, editorVersion: "2022.3.22f1c1" })?.editorVersion).toBe("2022.3.22f1c1");
+    expect(readDeploymentProgress({ ...facts, editorVersion: "2022.3.22f1c2" })).toBeNull();
+    const failed = { ...facts, phase: "installation_failed", source: undefined, cause: "vua.deployment.install_failed", editorVersion: "2022.3.22f1c1" };
+    expect(readDeploymentProgress(failed)?.phase).toBe("installation_failed");
+    expect(readDeploymentProgress({ ...failed, editorVersion: undefined })).toBeNull();
   });
   it("accepts region-aware source order and rejects policy drift or arbitrary mirrors", () => {
     const officialUrl = "https://www.nounitycn.top/download?v=unityhub%3A%2F%2F2022.3.22f1%2F887be4894c44";
@@ -39,6 +44,10 @@ describe("deployment v0.1 closed boundary", () => {
       { ...downloadPolicy, hubFallbackUrl: "unityhub://other-version/other-changeset" },
     ]) expect(valid({ ...plan, downloadPolicy: changed })).toBe(false);
     expect(valid({ ...plan, intent: { ...intent, useMirrors: false } })).toBe(false);
+    expect(valid({ ...plan, downloadPolicy: { ...downloadPolicy, editorEditions: ["global", "china"] } })).toBe(true);
+    for (const editorEditions of [["china", "global"], ["global"], ["global", "china", "other"]]) {
+      expect(valid({ ...plan, downloadPolicy: { ...downloadPolicy, editorEditions } })).toBe(false);
+    }
     expect(valid({ ...plan, steps: [cli, { ...editor, officialUrl: officialUrl.replace("887be4894c44", "other") }] })).toBe(false);
   });
   it("requires the right installer authority for acquisition and installation", () => {
