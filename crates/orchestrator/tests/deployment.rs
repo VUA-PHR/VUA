@@ -263,13 +263,13 @@ fn source_priority_and_mirror_preference_are_visible_and_bound_to_consent() {
     assert_eq!(
         mainland.download_policy.as_ref().unwrap().sources,
         [
-            EditorDownloadSource::Nounitycn,
-            EditorDownloadSource::Official
+            EditorDownloadSource::Official,
+            EditorDownloadSource::Nounitycn
         ]
     );
     assert_eq!(
         mainland.steps[1].official_url.as_deref(),
-        Some(UNITY_EDITOR_SOURCE)
+        Some(UNITY_OFFICIAL_EDITOR_SOURCE)
     );
     for region in [DownloadRegion::Other, DownloadRegion::Unknown] {
         let plan =

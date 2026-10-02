@@ -1,7 +1,7 @@
 # VUA product boundary
 
 
-> Document version: 2.6.0
+> Document version: 2.7.0
 > Status: Accepted
 > Scope: Entire VUA product
 > Updated: 2026-10-02
@@ -235,13 +235,15 @@ See the [N1 delivery plan](development/n1-delivery-plan.md).
 
 ## Unity deployment
 
-For N1, detect the download-network region first: mainland China prefers NoUnityCN; other or
-unknown regions prefer Unity's official source. Settings includes an enabled-by-default mirror
-switch; when off, use only Unity's official download sources.
+For N1, use the official Unity CLI to look up the target release and prefer Unity's official
+download route in every region. Identify the actual downloaded f1/c1 artifact before installation.
+NoUnityCN is an optional backup source, never the first source. Settings includes an
+enabled-by-default mirror switch; when off, use only Unity's official download sources.
 
 Prefer an existing usable global `2022.3.22f1`, then an existing China `2022.3.22f1c1`.
-When installation is needed, try the global edition using the enabled sources, then the China
-edition if global acquisition or installation fails; hand off to Unity Hub after both fail.
+When installation is needed, request the global official entry first. If it returns the accepted
+China artifact, install that actual edition directly. If global installation fails, try China;
+hand off to Unity Hub when the accepted alternatives fail.
 The author accepts this exact f1/c1 pair as equivalent for current development (2026-10-02),
 informed by community reports and their own inquiries. Preserve the observed full version in
 plans, installation records and later Build Records; do not rename c1 as f1. Use small real
@@ -437,6 +439,8 @@ plugin execution and a marketplace still require their separately accepted secur
 
 ## Document changelog
 
+- 2.7.0 (2026-10-02): make CLI-led official acquisition first in every region and identify the actual downloaded edition; mirrors are optional backups.
+
 - 2.6.0 (2026-10-02): accept the f1/c1 development pair and global → China → Hub deployment order while retaining actual identities.
 
 - 2.5.0 (2026-10-02): adopt model-driven official-first headset routes, observable silent installs
@@ -451,18 +455,5 @@ plugin execution and a marketplace still require their separately accepted secur
 - 2.2.1 (2026-09-30): describe the selected Steam/external integration path directly.
 - 2.2.0 (2026-09-30): limit initial accounts to guided onboarding and select external-only N2 tools; record deferred VRChat account experiments.
 - 2.1.0 (2026-09-29): consolidate user-requested VRChat interaction, credential, account-operation and privacy boundaries.
-- 2.0.1 (2026-09-28): replace an outdated unwired claim with source evidence and the N5 verification boundary.
-- 2.0.0 (2026-09-28): adopt agile continuing-Beta N delivery, automated non-UI acceptance, exact N2 integrations, complex production, audited material rework, local reinstall testing and illustrated user guidance.
-- 1.5.0 (2026-09-22): the full user ruling of 2026-09-22 landed — new "Production scope and product
-  rulings" section (confirmed scope: beginner Wizard and Quest guidance, Recipe as a stackable set
-  of modifications with four conflict options, sharing and reproduction boundary, provenance filled
-  at sharing time, BDL base capabilities retained with experimental forensics off by default,
-  Inspection folded into production records, MA/SDK responsibilities reusing upstream checks;
-  explicitly deferred: an egui/Slint lightweight standalone UI; five to-be-verified items listed as
-  undecided); AMF composition item 3 no longer lists Inspection as a user stage; the SDK-upload
-  boundary clause gains the technical-check limitations and honest display of unexecuted checks;
-  prominent notice that the section is accepted direction, not an implementation or real-machine
-  acceptance claim, and that frozen protocols and data formats do not automatically change.
-  Mirrors the ZH edition.
 
-Earlier entries (1.4.0 and older) live in git history.
+Earlier entries remain in Git history.

@@ -56,12 +56,13 @@ Returned URLs are from the family's closed destination list; the renderer reject
 
 `downloadPolicy` contains `region` (`china_mainland`, `other`, `unknown`), `mirrorsEnabled`,
 ordered `sources` (`official`, `nounitycn`), `editorEditions: ["global", "china"]` and the fixed
-`hubFallbackUrl: "unityhub://2022.3.22f1/887be4894c44"`. Mainland China with mirrors enabled uses
-`[nounitycn, official]`; other/unknown uses `[official, nounitycn]`. Mirrors disabled uses
+`hubFallbackUrl: "unityhub://2022.3.22f1/887be4894c44"`. Every region with mirrors enabled uses
+`[official, nounitycn]`. Mirrors disabled uses
 `[official]` in every region. The consumer validates the preference, source order and primary
 Editor URL together. The adapter owns the bounded country-category probe; play-only plans do
-not query it. Edition order is the outer loop: global acquisition/installation, then China,
-then Hub. A consumer may read an older Candidate plan without `editorEditions`; all newly
+not query it. Request the global official entry first and classify the payload as f1/c1.
+If global installation fails, try China, then Hub. A c1 installation attempted from the first
+request is not repeated as a second China attempt. A consumer may read an older Candidate plan without `editorEditions`; all newly
 produced creator plans include and digest-bind the pair. Changing the setting clears displayed
 consent, including late pending plan replies.
 
@@ -137,10 +138,9 @@ mutation boundary. Trust uses Windows Authenticode plus an exact allowlisted Uni
 name, without a shell. Certificate retrieval is cache-only; unavailable trust data refuses
 automation. CLI acquisition verifies pinned size/hash/signature and publishes into an absent managed
 slot without replacement. It makes no PATH/registry writes and refuses redirected ancestors.
-Standalone Editor installation tries the confirmed edition/source order, downloads the original
-installer into its edition-specific cache, checks the pinned MD5 and edition's Unity publisher,
-then installs at the confirmed root plus the actual version directory. Global requests stop at
-regional redirects and try the next source; China requests admit the regional CDN. Failed
+Standalone Editor installation validates the official CLI's fixed-release dry-run result, then
+downloads the original official installer. Regional redirects are followed; the payload's MD5
+identifies f1/c1 and selects its required publisher, cache and installation directory. Failed
 acquisition/installation advances to the next edition. Cancelling, declining elevation or
 destination drift stops the operation. Official acquisition never contacts the mirror. A debug-only process-local
 `VUA_DEV_EDITOR_INSTALLER` reuses a browser
@@ -226,6 +226,7 @@ evidence must distinguish synthetic coverage from dated real-machine runs kept l
 
 ## Document changelog
 
+- 0.1 Candidate update (2026-10-02): require official-first plans, validate CLI release metadata and classify f1/c1 after download instead of rejecting regional redirects.
 - 0.1 Candidate update (2026-10-02): bind global/China order to consent, accept the development pair,
   retain actual Editor identity on completion and report per-edition installation failures.
 

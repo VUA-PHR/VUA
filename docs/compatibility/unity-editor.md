@@ -1,6 +1,6 @@
 # Unity editor compatibility
 
-> Document version: 2.0.0
+> Document version: 2.0.1
 > Status: Accepted
 > Scope: Unity detection, deployment, project intake, AMF and Unity Bridge
 > Updated: 2026-10-02
@@ -22,7 +22,7 @@ decision covers the named pair, not arbitrary c-suffix releases or Tuanjie Engin
 | Class | Editor versions | Current development behavior |
 | --- | --- | --- |
 | Preferred target | Global `2022.3.22f1` | Reuse when available; first acquisition and installation attempt |
-| Accepted fallback | China `2022.3.22f1c1` | Reuse if no usable global target exists; otherwise install after global acquisition/installation fails |
+| Accepted fallback | China `2022.3.22f1c1` | Reuse if no usable global target exists; install when the official entry supplies c1 or global installation fails |
 | Migration source | `2019.4.31f1`, `2022.3.6f1` | Inspect metadata and guide migration on a backup or explicit project copy |
 | Other Unity version | Any other complete version string | Report the difference and guide installation of the accepted pair |
 | Unsupported editor family | Tuanjie Engine | Report the family and guide installation of the accepted pair |
@@ -32,11 +32,11 @@ license activation; VUA receives capability and readiness results only.
 
 ## Deployment and source selection
 
-The [deployment adapter](../architecture/unity-deployment.md) tries global, then China, then a
-Unity Hub handoff. Source order is a separate choice: mainland China with mirrors enabled uses
-NoUnityCN first; other/unknown networks use Unity first. Disabling mirrors excludes NoUnityCN
-and retains official global/China routes. Each edition uses its own installation/cache directory
-and expected artifact checksum/publisher. Preserve a valid existing installation.
+The [deployment adapter](../architecture/unity-deployment.md) uses CLI-led official acquisition
+first in every region. Inspect the payload: the global entry may supply either accepted edition.
+Use the observed edition's directory, checksum and publisher; try China after global failure,
+then offer Unity Hub. NoUnityCN is an optional backup. Disabling mirrors excludes it and retains
+official global/China routes. Preserve a valid existing installation.
 
 Inspect the installed executable, register its real path with Unity CLI, and retain its actual
 version in the task result. Users complete Unity account authorization and license selection
@@ -65,6 +65,7 @@ including SDK recognition and upload preparation, rather than blocking N1 instal
 
 ## Document changelog
 
+- 2.0.1 (2026-10-02): align official-first acquisition and actual downloaded-version checks with the latest user ruling.
 - 2.0.0 (2026-10-02): accept the author's development f1/c1 pair, prefer global with China fallback,
   and separate N1 admission from frozen inspection/project contracts.
 - 1.1.1 (2026-10-02): align the Installation route section with the owning deployment document

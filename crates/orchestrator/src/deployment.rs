@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 pub const DEPLOYMENT_SCHEMA: &str = "vua.environment-deployment/v0.1";
-/// Mirror entry selected by the author for N1; policy chooses its priority.
+/// Optional backup index; the official Unity route always comes first.
 pub const UNITY_EDITOR_SOURCE: &str =
     "https://www.nounitycn.top/download?v=unityhub%3A%2F%2F2022.3.22f1%2F887be4894c44";
 pub const UNITY_OFFICIAL_EDITOR_SOURCE: &str =
@@ -54,8 +54,8 @@ pub enum EditorDownloadSource {
     Nounitycn,
 }
 
-/// Small, explicit source policy. Region affects priority; the user's setting can
-/// remove the mirror entirely. Unknown region starts with the official source.
+/// Official-first in every region. Region remains an observation for guidance;
+/// the user's setting controls whether the backup mirror may be contacted.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EditorDownloadPolicy {
@@ -68,13 +68,9 @@ pub struct EditorDownloadPolicy {
 
 impl EditorDownloadPolicy {
     pub fn new(region: DownloadRegion, mirrors_enabled: bool) -> Self {
-        let sources = match (region, mirrors_enabled) {
-            (_, false) => vec![EditorDownloadSource::Official],
-            (DownloadRegion::ChinaMainland, true) => vec![
-                EditorDownloadSource::Nounitycn,
-                EditorDownloadSource::Official,
-            ],
-            (_, true) => vec![
+        let sources = match mirrors_enabled {
+            false => vec![EditorDownloadSource::Official],
+            true => vec![
                 EditorDownloadSource::Official,
                 EditorDownloadSource::Nounitycn,
             ],
@@ -388,15 +384,10 @@ pub fn plan_deployment_with_region(
                 "https://docs.unity.com/en-us/unity-cli/use-unity-cli",
             )
         };
-        let editor_source = if download_policy
-            .as_ref()
-            .is_some_and(|p| p.sources.first() == Some(&EditorDownloadSource::Nounitycn))
-        {
-            UNITY_EDITOR_SOURCE
-        } else {
-            UNITY_OFFICIAL_EDITOR_SOURCE
-        };
-        required.extend([installer_component, ("unity_editor", editor_source)]);
+        required.extend([
+            installer_component,
+            ("unity_editor", UNITY_OFFICIAL_EDITOR_SOURCE),
+        ]);
     }
     if quest {
         required.push((

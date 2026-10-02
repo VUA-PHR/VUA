@@ -1,6 +1,6 @@
 # N1 delivery plan: from a device choice to a working environment
 
-> Document version: 1.1.0
+> Document version: 1.2.0
 > Status: Accepted
 > Updated: 2026-10-02
 > Scope: Implementation of the user's September 30–October 2 N1 rulings
@@ -123,17 +123,17 @@ computer/headset connectivity from Internet access before recommending a remedy.
 ## Unity: first working creator environment
 
 The [Unity deployment architecture](../architecture/unity-deployment.md) owns acquisition and
-installation. Keep the accepted source policy: mainland China prefers NoUnityCN; other/unknown
-regions prefer Unity, followed by the other enabled source. Try global `2022.3.22f1` first,
-then China `2022.3.22f1c1` if global acquisition or installation fails; offer Hub after both fail.
+installation. Use Unity CLI release lookup and the official download route first in every region.
+Identify the actual payload as global `2022.3.22f1` or China `2022.3.22f1c1`; the global entry can
+return c1 directly. Try China after global installation failure and offer Hub after alternatives fail.
 Keep the enabled-by-default mirror switch in Settings. During development the author accepts
 this exact f1/c1 pair as equivalent; retain the full observed identity and fix concrete
 compatibility issues through real project trials.
 
-Reproduce NoUnityCN's exact-version Windows button and request its actual href. Preserve the
-page/referrer and relevant transport behavior; do not insert a relay that the button did not
-select. Report source resolution, received bytes, file identity, installer exit, Editor inspection
-and registration separately. Inspect the actual accepted Editor version and retain a valid cache.
+Keep NoUnityCN only as an optional backup after official download failure. Report CLI release
+lookup, received bytes, file identity, installer exit, Editor inspection and registration
+separately. Inspect the actual accepted Editor version and retain a valid cache; CLI registration
+can normalize c1 to f1, so it is not the authority for the observed version.
 
 First local completion path:
 
@@ -149,7 +149,7 @@ the PC path works. Existing external-manager projects retain their read-only/cop
 
 | Order | Concrete deliverable | First check |
 | --- | --- | --- |
-| 1 | Correct the mirror button route, retain source-specific failures and show long-task activity | Follow the actual button, obtain the file and exercise the product installer path |
+| 1 | Complete CLI-led official acquisition, actual-edition checks and long-task activity | Obtain the official payload, identify f1/c1 and exercise the product installer path |
 | 2 | Complete Editor registration, license handoff and SDK/MA preparation | Open/compile the real project; a repeated plan reuses the installation |
 | 3 | Brand/model selection and one official play route at a time | Selected model produces actual prerequisites, then reaches game launch and device verification |
 | 4 | Add account, activation and connectivity steps where the route needs them | Complete phone/headset/client handoffs and resume an interrupted guide |
@@ -198,6 +198,7 @@ combined Cargo dependency graph and inspect the lockfile rather than taking one 
 
 ## Document changelog
 
+- 1.2.0 (2026-10-02): prioritize CLI-led official acquisition and actual-version inspection; keep the mirror as an optional backup.
 - 1.1.0 (2026-10-02): apply the accepted development f1/c1 pair and global → China → Hub installation order.
 
 - 1.0.0 (2026-10-02): record model-first official routes, visible silent installation,

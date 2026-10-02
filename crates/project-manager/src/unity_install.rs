@@ -154,6 +154,25 @@ impl UnityInstallProbe {
         if action == DeploymentAction::InstallEditor
             && confirmed.kind == DeploymentInstallerKind::UnityCli
         {
+            // Ask the official CLI for the fixed release before fetching its original
+            // installer. --force only refreshes this dry-run plan; it never reinstalls.
+            // CLI beta.11 omits a URL and can label a registered c1 as f1, so the adapter
+            // uses the pinned official entry and inspects the actual downloaded bytes.
+            report(DeploymentActivity::from_source(
+                DeploymentPhase::ResolvingSource,
+                vua_orchestrator::deployment::EditorDownloadSource::Official,
+            ))?;
+            let release = self.run(exe, &official_plan_args(), 120)?;
+            if let Err(cause) = official_editor_plan(&release) {
+                report(DeploymentActivity {
+                    cause: Some(cause),
+                    ..DeploymentActivity::from_source(
+                        DeploymentPhase::SourceFailed,
+                        vua_orchestrator::deployment::EditorDownloadSource::Official,
+                    )
+                })?;
+                return Err("vua.deployment.hub_fallback_required");
+            }
             let destination = crate::unity_editor_install::install_editor(
                 data_root,
                 &confirmed.editor_root,
@@ -237,6 +256,38 @@ fn plain_version(value: &str) -> bool {
         && value
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, b'.' | b'-' | b'+'))
+}
+
+fn official_plan_args() -> [&'static str; 11] {
+    [
+        "--no-log-proxy",
+        "--format",
+        "json",
+        "install",
+        UNITY_VERSION,
+        "--changeset",
+        UNITY_CHANGESET,
+        "--architecture",
+        "x86_64",
+        "--force",
+        "--dry-run",
+    ]
+}
+
+/// This is release metadata, not installed-Editor identity. A c1 artifact is admitted
+/// separately by its own pinned digest, signer and post-install executable version.
+fn official_editor_plan(outcome: &ProcessOutcome) -> Result<(), &'static str> {
+    cli_install_result(outcome, DeploymentAction::InstallEditor)?;
+    let value: serde_json::Value = serde_json::from_str(&outcome.stdout)
+        .map_err(|_| "vua.deployment.vendor_result_unreadable")?;
+    let editor = &value["data"]["editor"];
+    if editor["version"] != UNITY_VERSION
+        || editor["architecture"] != "x86_64"
+        || editor["checksum"] != "md5-NGI1YmNlYTYzZjNkZTgzNzdlNjlkMTI3ZDNjZTRjMWQ="
+    {
+        return Err("vua.deployment.editor_source_changed");
+    }
+    Ok(())
 }
 
 /// Registration is a separate step after the native installer has produced a verified
@@ -323,6 +374,9 @@ fn supported_help(
         DeploymentInstallerKind::UnityCli => {
             help.stdout.contains("Usage: unity install")
                 && help.stdout.contains("--changeset")
+                && help.stdout.contains("--dry-run")
+                && help.stdout.contains("--force")
+                && help.stdout.contains("--architecture")
                 && modules.is_some_and(|m| {
                     m.success()
                         && !m.truncated
@@ -463,12 +517,44 @@ mod tests {
         }
     }
     #[test]
+    fn release_plan_is_read_only_and_cannot_authorize_a_different_editor() {
+        let args = official_plan_args();
+        assert!(args.contains(&"--dry-run") && args.contains(&"--force"));
+        assert!(!args.contains(&"--accept-eula"));
+        let valid = serde_json::json!({"success":true,"command":"install","errors":[],
+            "data":{"alreadyInstalled":true,"editor":{"version":UNITY_VERSION,
+                "architecture":"x86_64","downloadSize":0,
+                "checksum":"md5-NGI1YmNlYTYzZjNkZTgzNzdlNjlkMTI3ZDNjZTRjMWQ="}}});
+        assert!(official_editor_plan(&result(&valid.to_string())).is_ok());
+        for (field, value) in [
+            ("version", "6000.0.1f1"),
+            ("architecture", "arm64"),
+            ("checksum", "different"),
+        ] {
+            let mut changed = valid.clone();
+            changed["data"]["editor"][field] = value.into();
+            assert_eq!(
+                official_editor_plan(&result(&changed.to_string())),
+                Err("vua.deployment.editor_source_changed")
+            );
+        }
+        let mut failed = result(&valid.to_string());
+        failed.exit_code = Some(6);
+        assert!(official_editor_plan(&failed).is_err());
+    }
+    #[test]
     fn help_must_describe_the_requested_command_not_a_successful_unknown_command() {
-        let install = result("Usage: unity install [version] --changeset");
+        let install =
+            result("Usage: unity install [version] --changeset --dry-run --force --architecture");
         let modules = result("Usage: unity install-modules --editor-version --module");
         assert!(supported_help(
             DeploymentInstallerKind::UnityCli,
             &install,
+            Some(&modules)
+        ));
+        assert!(!supported_help(
+            DeploymentInstallerKind::UnityCli,
+            &result("Usage: unity install [version] --changeset"),
             Some(&modules)
         ));
         assert!(!supported_help(

@@ -1,5 +1,5 @@
-//! N1's direct Editor installer: a region-aware policy selects the source, Unity's original
-//! Windows installer performs installation, and the official CLI registers the result.
+//! N1's official-first Editor acquisition after CLI release lookup. Inspect downloaded
+//! bytes to select the accepted f1/c1 edition; the original installer and CLI finish setup.
 //! Keep acquisition and installation here rather than in the renderer or application core.
 
 use md5::{Digest as Md5Digest, Md5};
@@ -60,7 +60,17 @@ pub(super) fn install_editor(
 ) -> Result<PathBuf, &'static str> {
     try_editions(&policy.editor_editions, report, &mut |edition, report| {
         let installer = acquire_installer(data_root, policy, edition, report)?;
-        install_verified_editor(editor_root, runner, &installer, edition, report)
+        let mut actual_report = |mut activity: DeploymentActivity| {
+            activity.editor_version = Some(installer.edition.version());
+            report(activity)
+        };
+        install_verified_editor(
+            editor_root,
+            runner,
+            &installer.path,
+            installer.edition,
+            &mut actual_report,
+        )
     })
 }
 
@@ -74,9 +84,20 @@ fn try_editions(
         &mut DeploymentReporter<'_>,
     ) -> Result<PathBuf, &'static str>,
 ) -> Result<PathBuf, &'static str> {
+    let mut attempted_versions = Vec::new();
     for edition in editions.iter().copied() {
+        if attempted_versions.contains(&edition.version()) {
+            continue;
+        }
+        let mut actual_version = edition.version();
         let mut edition_report = |mut activity: DeploymentActivity| {
-            activity.editor_version = Some(edition.version());
+            // The official entry can return c1 on its first request. Keep the identity
+            // observed after download and do not repeat a failed c1 installation.
+            actual_version = activity.editor_version.unwrap_or(actual_version);
+            activity.editor_version = Some(actual_version);
+            if matches!(activity.phase, DeploymentPhase::Installing) {
+                attempted_versions.push(actual_version);
+            }
             report(activity)
         };
         match attempt(edition, &mut edition_report) {
@@ -89,13 +110,30 @@ fn try_editions(
                 | "vua.deployment.elevation_required"),
             ) => return Err(error),
             Err("vua.deployment.hub_fallback_required") => {} // Source failures were already reported.
-            Err(cause) => edition_report(DeploymentActivity {
+            Err(cause) => report(DeploymentActivity {
+                editor_version: Some(actual_version),
                 cause: Some(cause),
                 ..DeploymentActivity::new(DeploymentPhase::InstallationFailed)
             })?,
         }
     }
     Err("vua.deployment.hub_fallback_required")
+}
+
+struct VerifiedInstaller {
+    path: PathBuf,
+    edition: EditorEdition,
+}
+
+/// Filename, redirect country and CLI's registered version are not artifact identity.
+/// Both known payloads are allowed on the first official request; the explicit China
+/// retry only accepts c1. Check publisher and installed version as well as the digest.
+fn artifact_edition(md5: &str, requested: EditorEdition) -> Option<EditorEdition> {
+    match md5 {
+        EDITOR_MD5 if requested == EditorEdition::Global => Some(EditorEdition::Global),
+        CHINA_EDITOR_MD5 => Some(EditorEdition::China),
+        _ => None,
+    }
 }
 
 fn install_verified_editor(
@@ -149,10 +187,15 @@ fn acquire_installer(
     policy: &EditorDownloadPolicy,
     edition: EditorEdition,
     report: &mut DeploymentReporter<'_>,
-) -> Result<PathBuf, &'static str> {
+) -> Result<VerifiedInstaller, &'static str> {
     if let Some(file) = development_installer() {
         match verify_installer(&file, edition, report) {
-            Ok(_) => return Ok(file),
+            Ok((edition, _)) => {
+                return Ok(VerifiedInstaller {
+                    path: file,
+                    edition,
+                })
+            }
             Err(INTEGRITY_ERROR) => {} // May be the other edition; continue this edition's sources.
             Err(error) => return Err(error),
         }
@@ -169,7 +212,12 @@ fn acquire_installer(
         .as_nanos();
     if target.exists() {
         match verify_installer(&target, edition, report) {
-            Ok(_) => return Ok(target),
+            Ok((edition, _)) => {
+                return Ok(VerifiedInstaller {
+                    path: target,
+                    edition,
+                })
+            }
             Err(INTEGRITY_ERROR) => {
                 // Preserve the rejected cache for local diagnosis and leave the download
                 // slot reusable. Only this managed cache entry is moved; no user file is deleted.
@@ -190,7 +238,7 @@ fn acquire_installer(
     let client = reqwest::Client::builder()
         .https_only(true)
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) VUA-N1")
-        .redirect(editor_redirect_policy(edition))
+        .redirect(editor_redirect_policy())
         .connect_timeout(Duration::from_secs(30))
         .read_timeout(Duration::from_secs(60))
         .timeout(Duration::from_secs(7200))
@@ -225,7 +273,31 @@ fn acquire_installer(
         let downloaded = runtime.block_on(download(&client, &url, *source, &mut file, report));
         drop(file);
         match downloaded.and_then(|()| verify_installer(&stage, edition, report)) {
-            Ok(sha256) => {
+            Ok((actual_edition, sha256)) => {
+                let target = cached_installer(data_root, actual_edition);
+                let parent = target.parent().ok_or(DOWNLOAD_ERROR)?;
+                if !crate::unity_install::safe_install_root(parent) {
+                    return Err("vua.deployment.invalid_location");
+                }
+                std::fs::create_dir_all(parent).map_err(|_| DOWNLOAD_ERROR)?;
+                if target.exists() {
+                    // A previous complete c1 cache can coexist with a new official
+                    // request. Reuse it only after independently verifying its bytes.
+                    match verify_installer(&target, actual_edition, report) {
+                        Ok(_) => {
+                            return Ok(VerifiedInstaller {
+                                path: target,
+                                edition: actual_edition,
+                            })
+                        }
+                        Err(INTEGRITY_ERROR) => std::fs::rename(
+                            &target,
+                            parent.join(format!("UnitySetup64-{nonce}.rejected.exe")),
+                        )
+                        .map_err(|_| DOWNLOAD_ERROR)?,
+                        Err(error) => return Err(error),
+                    }
+                }
                 // Publish without replacing another file. Each attempt owns only its stage.
                 std::fs::hard_link(&stage, &target).map_err(|_| DOWNLOAD_ERROR)?;
                 drop(owned);
@@ -236,14 +308,17 @@ fn acquire_installer(
                     EditorDownloadSource::Nounitycn => SOURCE_PAGE,
                 };
                 let record = serde_json::json!({"source":source, "sourcePage":source_page,
-                    "downloadRoute":url, "version":edition.version(), "edition":edition,
-                    "requestedChangeset":"887be4894c44", "expectedMd5":expected_md5(edition), "fileSha256":sha256});
+                    "downloadRoute":url, "version":actual_edition.version(), "edition":actual_edition,
+                    "requestedChangeset":"887be4894c44", "expectedMd5":expected_md5(actual_edition), "fileSha256":sha256});
                 std::fs::write(
                     parent.join("acquisition.json"),
                     serde_json::to_vec_pretty(&record).map_err(|_| DOWNLOAD_ERROR)?,
                 )
                 .map_err(|_| DOWNLOAD_ERROR)?;
-                return Ok(target);
+                return Ok(VerifiedInstaller {
+                    path: target,
+                    edition: actual_edition,
+                });
             }
             Err("vua.deployment.cancelled") => return Err("vua.deployment.cancelled"),
             Err(error) => source_failed(*source, error, report)?,
@@ -393,17 +468,10 @@ fn is_regional_redirect(url: &reqwest::Url) -> bool {
         .is_some_and(|host| host == "unitychina.cn" || host.ends_with(".unitychina.cn"))
 }
 
-fn editor_redirect_policy(edition: EditorEdition) -> reqwest::redirect::Policy {
-    reqwest::redirect::Policy::custom(move |attempt| {
-        // Exhaust global sources first. The China attempt admits the regional CDN.
-        if attempt.previous().len() >= 6
-            || (edition == EditorEdition::Global && is_regional_redirect(attempt.url()))
-        {
-            attempt.stop()
-        } else {
-            attempt.follow()
-        }
-    })
+fn editor_redirect_policy() -> reqwest::redirect::Policy {
+    // Regional Unity redirects are a supported route. The file verification below
+    // decides the edition instead of rejecting it from the hostname alone.
+    reqwest::redirect::Policy::limited(6)
 }
 
 /// The initial source is a version index, so use the actual href rather than guessing a
@@ -422,7 +490,7 @@ fn verify_installer(
     path: &Path,
     edition: EditorEdition,
     report: &mut DeploymentReporter<'_>,
-) -> Result<String, &'static str> {
+) -> Result<(EditorEdition, String), &'static str> {
     let mut file = std::fs::File::open(path).map_err(|_| INTEGRITY_ERROR)?;
     let size = file.metadata().map_err(|_| INTEGRITY_ERROR)?.len();
     if size == 0 || size > MAX_EDITOR_BYTES {
@@ -460,23 +528,28 @@ fn verify_installer(
             last_report = Instant::now();
         }
     }
+    let actual_edition =
+        artifact_edition(&format!("{:x}", md5.finalize()), edition).ok_or(INTEGRITY_ERROR)?;
     if total != size
-        || format!("{:x}", md5.finalize()) != expected_md5(edition)
-        || !crate::deployment_trust::trusted_editor_installer(path, edition == EditorEdition::China)
+        || !crate::deployment_trust::trusted_editor_installer(
+            path,
+            actual_edition == EditorEdition::China,
+        )
     {
         return Err(INTEGRITY_ERROR);
     }
-    report(byte_progress(
-        DeploymentPhase::Verifying,
-        None,
-        total,
-        Some(size),
-    ))?;
-    Ok(sha256
-        .finalize()
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect())
+    report(DeploymentActivity {
+        editor_version: Some(actual_edition.version()),
+        ..byte_progress(DeploymentPhase::Verifying, None, total, Some(size))
+    })?;
+    Ok((
+        actual_edition,
+        sha256
+            .finalize()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect(),
+    ))
 }
 
 struct OwnedDownload(PathBuf);
@@ -491,17 +564,60 @@ mod tests {
     use super::*;
 
     #[test]
-    fn regional_http_redirect_is_followed_only_for_the_china_attempt() {
-        for edition in [EditorEdition::Global, EditorEdition::China] {
+    fn official_download_is_classified_by_payload_not_the_requested_edition() {
+        assert_eq!(
+            artifact_edition(EDITOR_MD5, EditorEdition::Global),
+            Some(EditorEdition::Global)
+        );
+        assert_eq!(
+            artifact_edition(CHINA_EDITOR_MD5, EditorEdition::Global),
+            Some(EditorEdition::China)
+        );
+        assert_eq!(artifact_edition(EDITOR_MD5, EditorEdition::China), None);
+        assert_eq!(
+            artifact_edition("unknown digest", EditorEdition::Global),
+            None
+        );
+    }
+
+    #[test]
+    fn regional_payload_failure_keeps_actual_version_and_does_not_install_it_twice() {
+        let mut attempts = 0;
+        let mut events = Vec::new();
+        let result = try_editions(
+            &[EditorEdition::Global, EditorEdition::China],
+            &mut |event| {
+                events.push(event);
+                Ok(())
+            },
+            &mut |_, report| {
+                attempts += 1;
+                report(DeploymentActivity {
+                    editor_version: Some(EditorEdition::China.version()),
+                    ..DeploymentActivity::new(DeploymentPhase::Installing)
+                })?;
+                Err("vua.deployment.install_failed")
+            },
+        );
+        assert_eq!(attempts, 1);
+        assert_eq!(result, Err("vua.deployment.hub_fallback_required"));
+        assert_eq!(
+            events.last().unwrap().editor_version,
+            Some(EditorEdition::China.version())
+        );
+        assert!(matches!(
+            events.last().unwrap().phase,
+            DeploymentPhase::InstallationFailed
+        ));
+    }
+
+    #[test]
+    fn official_entry_follows_regional_redirect_before_artifact_classification() {
+        {
             let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
             let address = listener.local_addr().unwrap();
             let server = std::thread::spawn(move || {
-                let expected_requests = if edition == EditorEdition::Global {
-                    1
-                } else {
-                    2
-                };
-                for index in 0..expected_requests {
+                for index in 0..2 {
                     let (mut socket, _) = listener.accept().unwrap();
                     socket
                         .set_read_timeout(Some(Duration::from_secs(5)))
@@ -526,21 +642,14 @@ mod tests {
             let client = reqwest::Client::builder()
                 .no_proxy()
                 .resolve("download.unitychina.cn", address)
-                .redirect(editor_redirect_policy(edition))
+                .redirect(editor_redirect_policy())
                 .timeout(Duration::from_secs(5))
                 .build()
                 .unwrap();
             let response = runtime
                 .block_on(async { client.get(format!("http://{address}/entry")).send().await })
                 .unwrap();
-            assert_eq!(
-                response.status(),
-                if edition == EditorEdition::Global {
-                    reqwest::StatusCode::FOUND
-                } else {
-                    reqwest::StatusCode::OK
-                }
-            );
+            assert_eq!(response.status(), reqwest::StatusCode::OK);
             server.join().unwrap();
         }
     }
@@ -688,7 +797,7 @@ mod tests {
         );
     }
     #[test]
-    fn regional_replacement_switches_routes_before_file_transfer() {
+    fn regional_host_detection_does_not_confuse_the_official_global_host() {
         for url in [
             "https://download.unitychina.cn/download_unity/installer.exe",
             "https://unitychina.cn/installer.exe",

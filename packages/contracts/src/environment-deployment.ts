@@ -159,7 +159,7 @@ export function isDeploymentPlanResult(v: unknown): v is DeploymentPlanResult {
         && s.component === (s.action === "install_editor" ? "unity_editor" : "android_modules")))
       && (s.location === null || typeof s.location === "string") && (s.version === null || typeof s.version === "string")
       && (s.component !== "unity_editor" || !record(p.downloadPolicy)
-        || s.officialUrl === (p.downloadPolicy.region === "china_mainland" && p.downloadPolicy.mirrorsEnabled === true ? MIRROR_EDITOR_ENTRY : OFFICIAL_EDITOR_ENTRY))
+        || s.officialUrl === OFFICIAL_EDITOR_ENTRY)
       && (s.officialUrl === null || (typeof s.officialUrl === "string" && ALLOWED_DESTINATIONS.includes(s.officialUrl))));
 }
 
@@ -169,7 +169,7 @@ function validDownloadPolicy(v: unknown, intent: DeploymentIntent): v is EditorD
   if (!["china_mainland", "other", "unknown"].includes(String(v.region))
     || typeof v.mirrorsEnabled !== "boolean" || v.mirrorsEnabled !== (intent.useMirrors !== false)
     || v.hubFallbackUrl !== UNITY_HUB_INSTALL_LINK || !Array.isArray(v.sources)) return false;
-  const expected = !v.mirrorsEnabled ? ["official"] : v.region === "china_mainland" ? ["nounitycn", "official"] : ["official", "nounitycn"];
+  const expected = !v.mirrorsEnabled ? ["official"] : ["official", "nounitycn"];
   const sources = v.sources;
   return sources.length === expected.length && expected.every((source, index) => sources[index] === source);
 }

@@ -8,8 +8,8 @@ Current owners, versions and statuses only. [Governance](meta/documentation-gove
 | Path | Document version | Status | Maintainer | Last review |
 | --- | --- | --- | --- | --- |
 | AGENTS.md | 2.1.0 | Accepted | Integration | 2026-09-28 |
-| docs/product-boundary.md | 2.6.0 | Accepted | Integration | 2026-10-02 |
-| docs/compatibility/unity-editor.md | 2.0.0 | Accepted | Integration | 2026-10-02 |
+| docs/product-boundary.md | 2.7.0 | Accepted | Integration | 2026-10-02 |
+| docs/compatibility/unity-editor.md | 2.0.1 | Accepted | Integration | 2026-10-02 |
 | docs/compatibility/alcom-vcc.md | 1.3.2 | Accepted | Environment | 2026-10-01 |
 | schemas/project-inspection/v0.1 | 0.1 | Superseded | Environment | 2026-09-09 |
 | docs/protocols/project-inspection-v0.2.md | 0.2 | Frozen | Environment | 2026-09-09 |
@@ -110,8 +110,8 @@ Current owners, versions and statuses only. [Governance](meta/documentation-gove
 | docs/meta/document-audit-2026-09-28.md | 1.0.0 | Accepted | Integration | 2026-09-28 |
 | docs/meta/protected-main.md | 1.2.0 | Accepted | Integration | 2026-09-28 |
 | docs/development/engineering-rules.md | 1.0.0 | Accepted | Integration | 2026-09-29 |
-| docs/development/n1-delivery-plan.md | 1.1.0 | Accepted | Environment | 2026-10-02 |
-| docs/architecture/unity-deployment.md | 2.2.0 | Accepted | Environment | 2026-10-02 |
+| docs/development/n1-delivery-plan.md | 1.2.0 | Accepted | Environment | 2026-10-02 |
+| docs/architecture/unity-deployment.md | 2.3.0 | Accepted | Environment | 2026-10-02 |
 | docs/README.md | 1.0.0 | Accepted | Integration | 2026-10-01 |
 | docs/project-context.md | 3.0.1 | Accepted | Integration | 2026-10-01 |
 | docs/migration/asset-ledger.md | 1.0.0 | Historical reference; no current implementation authority | Integration | 2026-10-02 |

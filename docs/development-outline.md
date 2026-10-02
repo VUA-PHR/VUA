@@ -379,5 +379,5 @@ do not turn documentation completeness, speculative coverage, or idle agent acti
 - 3.2.0 (2026-09-29): add human/Agent reading contexts without changing N acceptance or version mapping.
 - 3.1.0 (2026-09-28): user ruling — the collab mechanism is frozen and unmaintained from the
   N-sequence adoption; ordinary development is the only active entry; roles remain ownership hats.
-- 3.0.0 (2026-09-28): replace M/W scheduling with the user-approved N1-N7 Beta sequence, capability-first N5 rework, exact N2 tools, local reinstall tests, automated non-UI acceptance, and N7 illustrated guide.
-- 2.1.0 (2026-09-23): historical M release-gate/version-map definition; superseded for active scheduling by 3.0.0.
+
+Earlier entries remain in Git history.

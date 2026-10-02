@@ -37,10 +37,11 @@ licenses such as MPL-2.0, Unicode-3.0, Zlib, and CDLA-Permissive-2.0.
 
 ## Official Unity tools (N1)
 
-Unity CLI is acquired from Unity. Region and the mirror preference select the order of the
-official Unity Editor source and [NoUnityCN](https://www.nounitycn.top/), whose version page and
-published transfer service provide the original Unity installer. Disabled mirrors leave only
-the official source; unsuccessful acquisition offers a Unity Hub installation handoff.
+Unity CLI is acquired from Unity and looks up the target release. Unity's official Editor
+download route is tried first in every region; the actual downloaded f1/c1 edition is inspected.
+[NoUnityCN](https://www.nounitycn.top/) is an optional backup index used after official download
+failure. Disabled mirrors leave only official sources; failed installation alternatives offer
+a Unity Hub handoff.
 NoUnityCN's website source is [MIT-licensed](https://github.com/DanKE123abc/NoUnityCN/blob/main/LICENSE);
 VUA's adapter uses its download page and does not bundle its website code. Unity CLI and Editor
 are proprietary Unity offerings governed by [Unity terms](https://unity.com/legal/terms-of-service)
