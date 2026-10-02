@@ -1,7 +1,8 @@
 # Documentation guide
 
+> Document version: 1.0.1
 > Status: Accepted
-> Updated: 2026-09-30
+> Updated: 2026-10-02
 > Scope: Current documentation routes for ordinary single-line N-sequence development
 
 ## Choose your reading context
@@ -31,8 +32,7 @@ Both readers use the same definitions below; these introductions change navigati
 | Which exact contract do I need? | [Protocol guide](protocols/README.md) |
 
 Read only the owning documents needed for the task. Collab is [archived and retired](archive/2026-09-29/README.md).
-[PR protection](meta/protected-main.md) continues independently; the retained brief and report-only
-CI perform documentation checks, not coordination.
+[PR protection](meta/protected-main.md) continues independently as the repository-wide PR policy.
 
 ## Choose a reading route
 
@@ -41,7 +41,7 @@ AGENTS.md and CONTRIBUTING; then follow one route below instead of reading the e
 
 | Reader | Read in order | Ready to act when |
 | --- | --- | --- |
-| Player / end user | [Current delivery and limits](../README.md#current-delivery-and-starting-points) → [release evidence](release/v0.6.0.md) → [questions and bugs](../CONTRIBUTING.md#reporting-and-assets) | The available artifact and its limits are clear; planned N features are not assumed usable |
+| Player / end user | [Current delivery and limits](../README.md#current-delivery-and-starting-points) → [release evidence](release/v0.6.0.md) (Chinese) → [questions and bugs](../CONTRIBUTING.md#reporting-and-assets) | The available artifact and its limits are clear; planned N features are not assumed usable |
 | Human developer | [Contributor workflow](../CONTRIBUTING.md#develop-one-useful-slice) → [local setup and launch](../apps/desktop/README.md#development-commands) → the relevant task below | The app can be started and the checks relevant to the change are identified |
 | Frontend UI/UX Agent | [Product scope](product-boundary.md) + [N acceptance](development-outline.md#new-sequence) → [Desktop](architecture/desktop.md) → [interaction rules](design/design-standard.md#6-interaction-and-feedback) and [i18n/accessibility](design/design-standard.md#9-accessibility-internationalization-and-performance) | Required states, real Gateway data and human UI acceptance are identified; new account flows also read [account-guide browser](architecture/desktop.md#account-guide-browser) |
 | Environment business-logic Agent | [N1](development-outline.md#n1-purpose-driven-deployment) / [N2](development-outline.md#n2-exactly-two-gameplay-tools) → [deployment flow and code placement](architecture/evolution.md#deployment-architecture-first-slice) → [standalone Unity deployment](architecture/unity-deployment.md) → [external integrations](architecture/integrations-and-overlays.md#external-integration-modes) → [contract status](protocols/README.md#delivery-status-and-implementation-entry-points) | Detection, installation handoff, mutation ownership and missing contracts are distinguished |
@@ -57,25 +57,29 @@ AGENTS.md and CONTRIBUTING; then follow one route below instead of reading the e
 | N5 material audit/rework | [BDL](architecture/bdl.md), [AMF](architecture/amf-unity.md) | Current UI/Gateway/code/tests; account listing, selective download and import contracts |
 | UI changes | [Desktop](architecture/desktop.md), [design standard](design/design-standard.md) | Relevant feature and human UI acceptance |
 | Recovery | [Orchestrator](architecture/orchestrator.md) | Task store, operation-specific failure/retry format and tests |
-| Versions / N7 distribution | [Version policy](release/versioning.md), N7 acceptance | Installer, actual-build screenshots and user-provided guide reference |
+| Versions / N7 distribution | [Version policy](release/versioning.md), [N7 acceptance](development-outline.md#n7-beta-installer-regression-and-illustrated-user-guide) | Installer, actual-build screenshots and user-provided guide reference |
 | Contract change | [Protocol guide](protocols/README.md) | Specific schema and consumer tests; do not assume highest version replaces all older faces |
-| Document cleanup | [Audit/disposition](meta/document-audit-2026-09-28.md), [governance](meta/documentation-governance.md) | [Registry](REGISTRY.md) and [archive index](archive/README.md) |
+| Document cleanup | [Governance](meta/documentation-governance.md) (standing authority); [2026-09-28 audit/disposition](meta/document-audit-2026-09-28.md) (historical reference) | [Registry](REGISTRY.md) and [archive index](archive/README.md) |
 
 ## Directory roles
 
 | Location | Role |
 | --- | --- |
-| Root product-boundary/development-outline | What the product does; what is delivered next |
+| Root: this guide, REGISTRY.md, project-context.md, product-boundary.md, development-outline.md | Documentation map and registry, cold-start primer; what the product does; what is delivered next |
 | `architecture/` | Current code/ownership; explicitly marked proposals for incremental evolution |
 | `protocols/`, repository `schemas/` | Exact wire/storage behavior, with active/coexisting/historical status |
 | `compatibility/` | Supported targets and evidence limits, not universal Windows guarantees |
 | `design/` | Current UI acceptance authority; refine relevant sections with actual UI work |
+| `development/` | Engineering and evidence rules for implementation work |
 | `decisions/` | Accepted decisions retained with historical rationale; supersede explicitly, never silently rewrite |
 | `release/` | Version policy and immutable historical Chinese release notes |
 | `tool-catalog/` | Core/plugin/external classification; a catalog entry is not implemented capability |
-| `meta/` | Small documentation maintenance rules and this migration's audit |
+| `meta/` | Documentation maintenance rules (governance, protected-main policy) and the 2026-09-28 documentation-restructure audit |
+| `migration/` | Tracked legacy asset migration ledger; the directory is otherwise gitignored local scratch |
 | `research/` | Retained extraction/boundary research pending owning-domain review, not a new feature roadmap |
 | `archive/` | Outdated snapshots and completed spike evidence, excluded from the current reading path |
+
+`plans/` is gitignored local scratch: it is never tracked and never registered.
 
 Current authority: user ruling, product boundary, versioned contracts/tests, accepted decisions,
 architecture, design, then plans. A Draft proposal does not override an accepted contract.
@@ -85,3 +89,9 @@ Tracked docs are English except Chinese release notes and the four-language root
 Local Chinese mirrors under docs-zh are optional and non-authoritative. Each fact has one owning
 document; navigation links to it instead of copying detailed rules. Raw real-machine artifacts
 remain local. Registry and document changes ride with the feature, not a separate paperwork cycle.
+
+## Document changelog
+
+- 1.0.1 (2026-10-02): drop the retained collab-era checker mention; the script and CI were removed
+  with the mechanism's full retirement.
+- 1.0.0 (2026-10-01): register the documentation guide as a managed document.

@@ -1,8 +1,9 @@
 # VUA Tool Catalog
 
+> Document version: 1.0.0  
 > Status: Accepted catalog format  
 > Catalog schema: `vua.tool-entry/v3`  
-> Updated: 2026-09-30
+> Updated: 2026-10-02
 > Normative effect: Trust classification, entry metadata, and contribution rules only
 
 This community-maintainable catalog classifies entries by contact with VUA data and authority.
@@ -57,17 +58,30 @@ is required.
 Schema v3 is a pre-release normalization: v2 `built-in.*` IDs became `core.*`, and `vua-plugin.*`
 became `plugin.*`. No v2 entry reached `supported`; the old prefixes are reserved and cannot be reused.
 
+Entry files are data records versioned by the catalog format (`vua.tool-entry/v3` frontmatter),
+not [§2.1 documents](../meta/documentation-governance.md); they carry no Document version header
+or document changelog. The category READMEs are plain index pages of the catalog.
+
 Entry files are single-language English (language policy, user ruling 2026-09-25; see
-`docs/meta/documentation-governance.md`).
+[documentation governance](../meta/documentation-governance.md)).
 
 ## Release risk gate
 
-The release gate derives `risk`. Contributors declare complete capabilities and behavior; the
-release check applies [`vua.risk-gate/v1`](risk-gate-v1.md), writes or
-verifies the highest matching level, and fails on a mismatch. `pending`, unknown capabilities, or
-incomplete data cannot enter a supported release.
+The release gate derives `risk`. [`vua.risk-gate/v1`](risk-gate-v1.md) is policy text: it defines
+how the highest matching level is derived and what evidence each level requires. No automated
+check implements it yet — neither `scripts/` nor the CI workflows enforce the gate — so entries
+are currently reviewed against the rules by hand: contributors declare complete capabilities and
+behavior, reviewers write or verify the highest matching level, and a mismatch fails review.
+`pending`, unknown capabilities, or incomplete data cannot enter a supported release.
 
 A catalog entry records classification and evidence. Product boundary, architecture, security
 review, distribution review, and release gates respectively authorize scope, implementation,
 execution, bundling, and publication. Built-in Core behavior and the community plugin host retain
 separate trust boundaries.
+
+## Document changelog
+
+- 1.0.0 (2026-10-02): add the managed-document header; state that entry files are data records
+  versioned by the catalog format rather than §2.1 documents; record that the risk gate is
+  policy text whose enforcing check is not yet implemented (entries are reviewed by hand);
+  make the governance reference a proper link.

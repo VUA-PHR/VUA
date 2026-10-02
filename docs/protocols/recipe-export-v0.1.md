@@ -49,8 +49,25 @@
 > `RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01`/`RECIPE_EXPORT_SCHEMA_VERSION_V01`
 > + the served row `recipe.exportProjectDraft` + the port face
 > `ProjectDraftExportPort` [declared-none default] + 9 wire tests riding the
-> real frame loop. First updated 2026-09-22, v0.1 freeze batch: bilingual
-> protocol document + REGISTRY registration)
+> real frame loop. First updated 2026-09-22, v0.1 freeze batch: protocol
+> document + REGISTRY registration)
+> Erratum (2026-10-02): bilingual-era wording removed from the Updated lines
+> (the EN mirror no longer exists; this English file is the sole canonical
+> document per the 2026-09-25 language ruling); the close-out checklist's
+> bilingual-era bullet below is reworded to match. Protocol version and
+> normative content unchanged.
+> Erratum (2026-10-02): open-items state refresh — the Desktop consumption
+> batch (third Open items bullet) has landed, verified against the code on
+> main: the narrow port `apps/desktop/src/renderer/gateway/
+> recipe-export-port.ts` (029 B-face loop 4) is wired into the live gateway
+> (`apps/desktop/src/renderer/gateway/electron-gateway.ts:215`), and the
+> recipe-page draft confirmation/completion flow consumes it in
+> `apps/desktop/src/renderer/features/recipe/RecipeProjectDraftExport.tsx:77`.
+> The W25 framing in the body below (the B-face positioning line, the two
+> Option A freeze-loop deferrals) and in the last two Open items bullets is
+> retired (window superseded);
+> both items themselves stay open. Protocol version and normative content
+> unchanged.
 
 ## B-face positioning (loop 1 of the 029 pipeline)
 
@@ -69,7 +86,7 @@ single save chain recipe.save** — D5 dedup + busy guard + baseRevision
 version chain) does it become an official Recipe; **a draft is never
 silently promoted**. Zero end-to-end claims on this face; the real-machine
 full chain (real project export → confirm → assemble → workshop status)
-belongs to W25 (O-2).
+is pending; unscheduled (the W25 window is retired).
 
 ## Freeze close-out (029 B-face loop 1 hard preconditions, item by item)
 
@@ -90,8 +107,8 @@ belongs to W25 (O-2).
   marker iff pin); the wire frame-loop test landed with the v0.1.1
   wiring batch (`crates/provider-host/tests/recipe_export_wire_v01.rs`,
   9 cases);
-- **Bilingual protocol document + REGISTRY**: this file + EN mirror + two
-  REGISTRY rows (this batch).
+- **Protocol document + REGISTRY**: this file + its two REGISTRY rows (this
+  batch).
 
 ## Core rulings (029 open items converged)
 
@@ -119,8 +136,9 @@ belongs to W25 (O-2).
    honest increment if a scan lands later.
    **Option A is REGISTERED, NOT IMPLEMENTED** (candidate = a
    unity-bridge read-only scene-structure discovery operation, touching
-   the production-domain C# face; its own freeze loop after the W25
-   real-machine walk-through ruling; zero protocol-bump action in this
+   the production-domain C# face; its own freeze loop after the
+   real-machine walk-through ruling (pending; unscheduled — the W25
+   window is retired); zero protocol-bump action in this
    batch).
 2. **Carrier ruling = a standalone export face (new family
    recipe-export/v0.1).** Code fact: the recipe v0.3 document face has
@@ -388,8 +406,9 @@ field change must bump the version; in-place rewrites are forbidden.
 - **The read-only Bridge scan (option A)** is not chartered or scheduled —
   registered candidate = a unity-bridge read-only scene-structure
   discovery operation, touching the production-domain C# face and a
-  protocol-version decision; its own freeze loop after the W25
-  real-machine walk-through; zero protocol-bump action in this batch;
+  protocol-version decision; its own freeze loop after the
+  real-machine walk-through (pending; unscheduled — the W25 window is
+  retired); zero protocol-bump action in this batch;
 - **Non-VUA project difference prompting** (029 open item 2) = a
   presentation ruling awaiting the user; this face carries only the
   tri-state fact;
@@ -410,14 +429,17 @@ field change must bump the version; in-place rewrites are forbidden.
   (2026-09-22) — `OnDiskProjectDraftExporter` mirrors the 013 aggregate's
   read discipline in core, the capability override flipped the served
   row, and the loop-2 wire suite gained the real-executor chain cases;
-- Desktop consumption batch (recipe-page "import from project" entry +
+- ~~Desktop consumption batch (recipe-page "import from project" entry +
   draft confirmation/completion flow consuming the A-face hub shape;
-  029 B-face loop 4) after its shape verdict;
+  029 B-face loop 4) after its shape verdict~~ **(landed — Erratum
+  2026-10-02)**;
 - Non-VUA project applicability presentation (029 open item 2): awaiting
   the user;
 - Option A (read-only Bridge scan) candidate registration: its own freeze
-  loop after the W25 real-machine walk-through;
+  loop after the real-machine walk-through (pending; unscheduled — the
+  W25 window is retired);
 - The real-machine full chain (real project export → confirm → assemble
-  → workshop status) belongs to W25 (O-2). End-to-end claims stay at
+  → workshop status) is pending; unscheduled (the W25 window is retired).
+  End-to-end claims stay at
   zero — the executor tests and the wire chain are code-face evidence on
   synthetic projects, never a real-machine claim.

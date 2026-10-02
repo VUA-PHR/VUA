@@ -23,6 +23,25 @@
 > typed rejection codes + the independent inspection entry + the error
 > envelope params face; the v0.1 vocabulary/vectors stay byte-frozen, see
 > git history)
+> Erratum (2026-10-02): provenance pointer repair — "the BOARD U19 row"
+> (the Status line and "Normative source" below) refers to the retired
+> collab BOARD, preserved at
+> [docs/archive/2026-09-29/collab/BOARD.md](../archive/2026-09-29/collab/BOARD.md)
+> (the U19 row carries the ruling text verbatim, in Chinese).
+> Erratum (2026-10-02): open-items state refresh — the desktop consumer
+> batch (first Open items bullet) has landed, verified against the code on
+> main: the TS face carries the bumped row and the
+> `release.openForInspection` method face
+> (`packages/contracts/src/application-contract.ts:2290`, `:2316`); the
+> four-language `errors.releaseHandoff.*` tables landed in sync
+> (`apps/desktop/src/renderer/i18n/strings.en.ts:2780`,
+> `strings.zh-CN.ts:2718`, `strings.ja.ts:2690`, `strings.ko.ts:2682`); the
+> Release page's independent-open entry consumes `openForInspection`
+> (`apps/desktop/src/renderer/features/release/release-project-open-panel.tsx:100`).
+> The W25 framing in the "Verification boundary" section and the last
+> Open items bullet is retired (window superseded); the
+> real-machine walkthrough itself stays open. Protocol version and
+> normative content unchanged.
 
 ## Normative source (user ruling U19, 2026-09-21)
 
@@ -188,7 +207,8 @@ historical frozen face) with their compile pin kept.
 Zero end-to-end claims in this batch: all evidence is fake-port /
 temp-store frame-loop evidence (ruling 15 local-first); the real machine
 (real records → real launch → handshake → fact reflux, the blocked-state
-desktop presentation chain) belongs to the W25 real-machine window (O-2)
+desktop presentation chain) is pending; unscheduled (the W25 real-machine
+window is retired)
 with no relaxed evidence requirements.
 
 ## Dependency direction
@@ -205,9 +225,10 @@ of the pipeline).
 
 ## Open items
 
-- The desktop consumer batch (TS face + the four-language tables + the
+- ~~The desktop consumer batch (TS face + the four-language tables + the
   Release page's independent-open entry confirmation): the desktop seat,
-  wt-3, next ring of the pipeline;
+  wt-3, next ring of the pipeline~~ **(landed — Erratum 2026-10-02)**;
 - The end-to-end real-machine walkthrough (both entries' real-machine
-  split and the blocked-state presentation chain): W25 (O-2), zero
+  split and the blocked-state presentation chain): pending; unscheduled
+  (the W25 window is retired), zero
   end-to-end claims.

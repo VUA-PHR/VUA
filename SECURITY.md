@@ -1,6 +1,7 @@
 # Security policy
 
-VUA is in continuing Beta with no scheduled v1.0.0. Security fixes target the default branch and
+VUA's release lifecycle (continuing Beta, no scheduled v1.0.0) is owned by the
+[version policy](docs/release/versioning.md). Security fixes target the default branch and
 latest release. Older versions do not have a separate maintenance commitment, but reports about
 them are welcome; include the affected version or commit.
 

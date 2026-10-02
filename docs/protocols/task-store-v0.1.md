@@ -2,10 +2,15 @@
 
 
 > Document version: 0.1
-> Status: Frozen (M2, 2026-09-04) — SQLite authoritative task state
+> Status: Frozen (2026-09-04) — SQLite authoritative task state
 > Owner: Orchestrator persistence adapter
 > Updated: 2026-09-02
 > Format version: `0.1`
+> Erratum (2026-10-02): stale collab lane labels removed — the Status header
+> drops the M2 prefix (the REGISTRY status carries no lane label), and the
+> "B9" reference in "Durability and files" now reads as plain text; protocol
+> version and normative content unchanged (the provider-process 0.2 erratum
+> precedent).
 
 ## Boundary
 
@@ -48,8 +53,8 @@ missing or unknown format version instead of guessing writes.
 The production database uses `rusqlite 0.40.1` with bundled SQLite, `journal_mode=WAL`, `synchronous=FULL`, foreign
 keys, and a five-second busy timeout. Once VUA confirms a transaction, the durability target includes process crash
 and power loss. Under WAL, the database and its colocated `-wal` and `-shm` files together form active state; copying
-only the main file while the store is live is invalid. Clean shutdown may run a truncating checkpoint. B9 separately
-freezes backup, corruption recovery, and downgrade drills.
+only the main file while the store is live is invalid. Clean shutdown may run a truncating checkpoint. Backup,
+corruption recovery, and downgrade drills are frozen separately.
 
 ## Restart recovery
 

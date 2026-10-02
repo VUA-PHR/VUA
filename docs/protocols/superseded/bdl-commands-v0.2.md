@@ -4,8 +4,9 @@
 > **⚠️ Superseded by v0.3 (2026-09-08)**: the batch-import command
 > `warehouse.import`, the generation audit-chain field `importCorrelationId`,
 > and the terminology ruling (VPM package). The current normative text is
-> [bdl-commands-v0.3.md](bdl-commands-v0.3.md); this document is kept as
-> history only, matching `schemas/bdl-commands/v0.2/` (never edited).
+> [bdl-commands-v0.4.md](../bdl-commands-v0.4.md) (v0.3 is itself superseded);
+> this document is kept as history only, matching `schemas/bdl-commands/v0.2/`
+> (never edited).
 > Document version: 0.2
 > Status: **Superseded (→ v0.3)** (2026-09-08; formerly Frozen 2026-09-07 —
 > the v0.2 vocabulary shipped with the M4 full shape and was verified through

@@ -43,8 +43,20 @@
 > arm + the wire tests; WORD FACE ZERO CHANGE — this document version records
 > the wire landing only. Previous: 2026-09-20 v0.6 freeze batch: dual schemas
 > + vectors + core consumer tests + TS face + mock constant-absence arms +
-> bilingual protocol doc + REGISTRY + the packages-repos v0.2 read-back
+> protocol document + REGISTRY + the packages-repos v0.2 read-back
 > increment frozen in the same batch)
+> Erratum (2026-10-02): bilingual-era wording removed from the Updated lines
+> (the EN mirror no longer exists; this English file is the sole canonical
+> document per the 2026-09-25 language ruling). This file IS the newest
+> slice of the packages-ops family. Protocol version and normative content
+> unchanged.
+> Erratum (2026-10-02): the closing "stays W25 (O-2)" deferral is reworded
+> to pending/unscheduled — the W25 window is retired (the development
+> outline supersedes the W25 schedule); the walkthrough itself stays open.
+> The two other W25 mentions in this document (the ruling-(c) name in the
+> header and the unfreeze record below) are historical records of the
+> completed 2026-09-20 static-forensics verification and stay intact.
+> Protocol version and normative content unchanged.
 
 ## THE A4 EXPLICITLY-OUTSIDE PREVIEW RESOLVED (the ruling-(c) unfreeze record)
 
@@ -261,7 +273,8 @@ in the wire tests; the desktop subscription-row toggle and refresh button
 wait for shape approval; the VrcGetLib override waits for the environment
 implementation-verification slice — until then the served row stays honestly
 unavailable on any real engine and no real backend can answer these routes);
-the real-machine walkthrough stays W25 (O-2, waiting for the user window).
+the real-machine walkthrough is pending; unscheduled (the W25 window is
+retired).
 This batch and the packages-repos v0.2 read-back increment froze in the same
 batch (without the read-back bit the toggle face could not be consumed
 honestly — the F3 increment precedent, same path); the v0.2 negotiation

@@ -23,7 +23,20 @@
 > = word face frozen + TS face registered + shape approval, per the P1
 > full-chain procedure)
 > Updated: 2026-09-17 (v0.1 freeze batch: dual schemas + vectors + core
-> consumer tests + TS face + bilingual protocol doc + REGISTRY registration)
+> consumer tests + TS face + protocol document + REGISTRY registration)
+> Erratum (2026-10-02): bilingual-era wording removed from the Updated line
+> (the EN mirror no longer exists; this English file is the sole canonical
+> document per the 2026-09-25 language ruling). Sibling disambiguation: THIS
+> file is the combined v0.1 base spec of `packages.listRepos` AND
+> `packages.packageCatalog`;
+> [packages-repo-catalog-v0.1.md](packages-repo-catalog-v0.1.md) (one fewer
+> `s`) is the `packages.repoCatalog` per-repository inventory face — the two
+> names differ by one letter and are not the same document. Protocol version
+> and normative content unchanged.
+> Erratum (2026-10-02): the "remains W25 (user-gated window O-2)" deferral
+> below is reworded to pending/unscheduled — the W25 window is retired (the
+> development outline supersedes the W25 schedule); the walkthrough itself
+> stays open. Protocol version and normative content unchanged.
 
 ## P2 read-face semantics (phasing and what P2 deliberately is not)
 
@@ -143,4 +156,5 @@ types stay in adapters; the word list transports facts.
   TS face → shape approval → consumption slice); until the consumption
   batch lands and the user restarts the dev stack, the package-manager
   page holds its P1 intermediate honest state. No end-to-end claim is
-  made: the real-machine walkthrough remains W25 (user-gated window O-2).
+  made: the real-machine walkthrough is pending; unscheduled (the W25
+  window is retired).

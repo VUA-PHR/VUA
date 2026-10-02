@@ -24,12 +24,33 @@
 > desktop domain (per-face upgrade, `blocks.changes` evolution per
 > desktop stance 93752d5 item 3)
 > Updated: 2026-09-19 (v0.1 freeze batch: dual schemas + vectors +
-> core consumer tests + TS face + bilingual protocol doc + REGISTRY)
+> core consumer tests + TS face + protocol document + REGISTRY)
 > Updated: 2026-09-19 (v0.1.1 wiring batch: the two wire route arms +
 > the `served_capabilities` row `packages.removeOps` + the port-code
 > projection landed; zero word-face change — word list, schemas,
 > vectors, TS face untouched; route/projection tests
 > `crates/provider-host/tests/packages_ops_wire.rs` 10 cases)
+> Erratum (2026-10-02): the newest slice of this family is
+> [packages-ops-v0.6.md](packages-ops-v0.6.md); the six slices are concurrent
+> faces — v0.6 is not a blanket replacement of v0.1–v0.5. Bilingual-era
+> wording removed from the Updated lines (the EN mirror no longer exists;
+> this English file is the sole canonical document per the 2026-09-25
+> language ruling). Protocol version and normative content unchanged.
+> Erratum (2026-10-02): provenance and deferral cleanup.
+> (1) Unverifiable citation: the Status line's "environment library study
+> 4a0f02f" names a commit that does not exist in this repository
+> (`git cat-file -t 4a0f02f` fails — a collab-era worktree-local hash);
+> treat it as an unverifiable historical reference.
+> (2) Dead pointers re-pointed: the "per-tree state files and BOARD row #40"
+> cited below refer to retired collab artifacts, preserved at
+> [docs/archive/2026-09-29/collab/state/](../archive/2026-09-29/collab/state/)
+> (per-tree final snapshots) and
+> [docs/archive/2026-09-29/collab/BOARD.md](../archive/2026-09-29/collab/BOARD.md)
+> (row #40).
+> (3) The two "stays with W25 (awaiting the user window O-2)" deferrals
+> below are reworded to pending/unscheduled — the W25 window is retired
+> (the development outline supersedes the W25 schedule); the walkthrough
+> itself stays open. Protocol version and normative content unchanged.
 
 ## A1 write-face semantics (the two-verb pair and the nine-state task)
 
@@ -187,7 +208,7 @@ vendor types stay in adapters; the word list transports facts.
   shapes are never moved into live — the #22/#36 lessons, twice on
   record). Zero end-to-end claim maintained: the wiring batch is the
   wire face inside the provider process; the real-machine walkthrough
-  stays with W25 (awaiting the user window O-2).
+  is pending; unscheduled (the W25 window is retired).
 - The environment implementation-verification slice
   (`VrcGetLibBackend` `preview_remove`/`apply_remove` already in the
   tree, per the 024/025 procedure: implementation + targeted tests +
@@ -197,8 +218,8 @@ vendor types stay in adapters; the word list transports facts.
 - Desktop consumption follows the per-face upgrade procedure (stance
   93752d5 item 3: the A1 freeze batch unlocks the matching write
   entries; the freeze batch is the single authority for that face's
-  live shape); zero end-to-end claim: real-machine walkthrough stays
-  with W25 (awaiting the user window O-2).
+  live shape); zero end-to-end claim: real-machine walkthrough is
+  pending; unscheduled (the W25 window is retired).
 - `create_project` is not in the P3 face order (core ruling 82a39c4
   point 5: reserved as A5, start condition = a desktop entry-point
   demand; the A5 start ruling has landed — see the per-tree state

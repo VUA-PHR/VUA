@@ -26,13 +26,32 @@
 > method vocabulary, the params closed set, the acceptance-receipt and
 > handoff-fact shapes, the error-code closed set, and the honest-absence
 > semantics
-> Updated: 2026-09-16 (v0.1 freeze batch: bilingual protocol document +
+> Updated: 2026-09-16 (v0.1 freeze batch: protocol document +
 > docs/REGISTRY.md registration); 2026-09-16 (core use-case wiring batch:
 > implementation-domain status refresh — the route wires by port injection,
 > the default-assembly absence semantics unchanged, vocabulary/shapes/
 > error-code closed set untouched); 2026-09-16 (core assembly slice: the
 > default assembly carries the real adapter, absence converges to the
 > exception path — vocabulary/shapes/error-code closed set untouched)
+> Erratum (2026-10-02): [release-handoff-v0.2.md](release-handoff-v0.2.md)
+> exists and is the current face of this family (frozen 2026-09-21, U19
+> ruling: the record-state admission gate and the `release.openForInspection`
+> entry); this v0.1 document is the historical frozen face, consistent with
+> the bdl-queries pattern. Bilingual-era wording removed from the Updated
+> line and freeze-precondition ④ (the EN mirror no longer exists; this
+> English file is the sole canonical document per the 2026-09-25 language
+> ruling). Protocol version and normative content unchanged.
+> Erratum (2026-10-02): wire-test count reconciliation — this document cites
+> `release_handoff_wire` as "5/5" (freeze sequence ③, the 2026-09-16
+> freeze-batch count) and as "12 cases" (Machine-readable vocabulary, after
+> the same-day wiring/assembly slices); the file grew with each landed slice
+> and now carries 20 cases, matching the count
+> [release-handoff-v0.2.md](release-handoff-v0.2.md) records for the 2026-09-21
+> v0.2 batch (verified: `crates/provider-host/tests/release_handoff_wire.rs`
+> has 20 `#[test]` cases). The W25 framing in the Open items bullet and the
+> "Real-machine precondition and verification boundary" section is
+> retired (window superseded); the walkthrough itself stays open. Protocol
+> version and normative content unchanged.
 
 ## Handoff semantics (product boundary restated)
 
@@ -67,8 +86,8 @@ to guess at (honesty rules 1/2).
   release-handoff section, 3 cases + the mock absence-branch test) — the
   desktop Release-page real-consumption slice follows (desktop stance: waits
   for the freeze batch + the TS face, no pre-wiring);
-- **④ Bilingual protocol document revision record**: this file + the EN
-  mirror + the application-contract protocol method-row + the revision entry
+- **④ Protocol document revision record**: this file + the
+  application-contract protocol method-row + the revision entry
   (this batch);
 - **⑤ unity-bridge evolution clause**: **vacuous** — the production stance
   pinned that the handoff never crosses the in-editor Bridge command face;
@@ -183,8 +202,10 @@ cases).
 The freeze batch sets **no new real-machine precondition** (production stance
 4): every stance cites in-repo code or real-machine evidence already on
 record; the process-face launch + handshake-wait implementation tests go
-local-first per ruling 15 with the evidence reusable at W25; the end-to-end
-claim awaits the W25 real-machine window (O-2) — this batch claims zero
+local-first per ruling 15 with the evidence reusable at a future
+real-machine window; the end-to-end
+claim is pending; unscheduled (the W25 real-machine window is retired) —
+this batch claims zero
 end-to-end verification.
 
 ## Dependency direction
@@ -245,6 +266,6 @@ or field changes must bump the version, never rewrite in place.
 
 - The end-to-end real-machine walkthrough (including the real provider chain
   after the assembly slice: admission → real launch → handshake → fact
-  reflux): belongs to the W25 real-machine window (O-2 awaits the user
-  opening it), evidence requirements not relaxed — the assembly slice claims
+  reflux): pending; unscheduled (the W25 real-machine window is retired),
+  evidence requirements not relaxed — the assembly slice claims
   zero end-to-end verification.

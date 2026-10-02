@@ -20,6 +20,15 @@
 > method faces; the read face returns the evidence body verbatim — never
 > inlined, never re-derived
 > Updated: 2026-09-13 (v0.1 freeze batch: all three methods frozen in one batch)
+> Erratum (2026-10-02): bilingual-era wording removed from the close-out item
+> (4) below (the EN mirror no longer exists; this English file is the sole
+> canonical document per the 2026-09-25 language ruling). Protocol version
+> and normative content unchanged.
+> Erratum (2026-10-02): the Open items real-machine walkthrough bullet below
+> deferred to the W25 window; that window is retired (the development
+> outline supersedes the W25 schedule), so the bullet now reads as pending
+> and unscheduled. The item itself stays open. Protocol version and
+> normative content unchanged.
 
 ## Freeze close-out (proposal 016 §7 hard preconditions, itemized)
 
@@ -44,7 +53,7 @@
   acquisition contract anchor, vector-driven, plus the provider-host frame
   loop over the real routes covering zero-receipt-no-publish and unwired
   honest absence);
-- **(4) Bilingual protocol document + (5) docs/REGISTRY.md row**: land with
+- **(4) Protocol document + (5) docs/REGISTRY.md row**: land with
   this freeze batch.
 
 ## Frozen scope and division of labor
@@ -125,7 +134,8 @@ rewrite in place.
 - Desktop page consumption (M7 breakdown-table desktop row): the BG-15
   skeleton is in-tree awaiting wiring;
 - Real-machine walkthrough (inspection runs against a live Unity
-  production environment): belongs to the W25 real-machine window;
+  production environment): pending; unscheduled (the W25 real-machine
+  window is retired);
 - The `official_sdk_rating` reserved value: disabled until the SDK
   handover slice lands (016 arbitration, a production-domain obligation —
   this vocabulary row transcribes it, never interprets it).

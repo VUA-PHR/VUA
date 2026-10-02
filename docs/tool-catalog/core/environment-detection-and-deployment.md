@@ -2,14 +2,14 @@
 catalog_schema: "vua.tool-entry/v3"
 id: "core.environment-detection-and-deployment"
 boundary: "core"
-status: "planned"
+status: "experimental"
 risk: "medium"
 risk_rule: "vua.risk-gate/v1"
 delivery: "unscheduled"
 maintainer: "VUA-Project"
 distribution: "core"
 platforms: ["windows"]
-capabilities: ["environment.inspect", "environment.plan", "installer.launch.official"]
+capabilities: ["environment.inspect", "environment.plan", "environment.execute.confirmed", "environment.verify", "download.confirmed", "installer.launch.official"]
 ---
 
 # Environment Detection and Guided Deployment

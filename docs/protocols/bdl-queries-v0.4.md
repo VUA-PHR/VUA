@@ -28,6 +28,12 @@
 > Updated: 2026-09-10 (v0.4: completed-download adoption-source query
 > added); 2026-09-15 header status-note refresh (route-landed verification,
 > protocol body unchanged)
+> Erratum (2026-10-02): [bdl-queries-v0.5.md](bdl-queries-v0.5.md) exists and
+> is the current face of this read-model family (frozen 2026-09-22 — an
+> additive increment: the six v0.4 methods carry over unchanged and two
+> `dependencies.*` methods are added). This v0.4 document remains a frozen,
+> concurrently served older generation. Protocol version and normative
+> content unchanged.
 
 ## v0.4 revision (relative to v0.3)
 

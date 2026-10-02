@@ -1,10 +1,10 @@
 # Unity editor compatibility
 
 
-> Document version: 1.1.0
+> Document version: 1.1.1
 > Status: Accepted  
 > Scope: Unity detection, project intake, AMF production, and Unity Bridge execution  
-> Updated: 2026-09-02  
+> Updated: 2026-10-02  
 > Normative effect: Defines VUA's editor support matrix
 
 ## Support matrix
@@ -25,6 +25,10 @@ not load in VRChat. VUA therefore promotes a new production target only after VR
 VUA release passes the Bridge, SDK, package, synthetic-project, and local smoke matrices. Upstream
 recommendation and VUA verification remain separate states.
 
+Independently of the version class, the Unity CLI, the optional Unity Hub, and the Unity Editor
+retain credentials, account sessions, and license activation; VUA receives capability and
+readiness results only.
+
 ## Migration sources
 
 `2019.4.31f1` and `2022.3.6f1` are accepted only as project-migration inputs. VUA may inspect their
@@ -35,19 +39,18 @@ for that upgrade.
 
 ## Installation route
 
-The [standalone deployment direction](../architecture/unity-deployment.md) installs the exact
-global target using Unity’s official CLI; Hub is optional. Installer version/support and Editor
+The [standalone deployment direction](../architecture/unity-deployment.md) owns the route:
+Unity's original installer installs the exact global target, and the official CLI registers the
+Editor and handles licensing; Hub is optional. Installer version/support and Editor
 compatibility are separate checks. A successful download does not establish a licensed, usable
-Editor, and the production target below is not widened by CLI availability.
+Editor, and the production target above is not widened by the installation route.
 
 ## Other Unity versions
 
 Every complete version string outside the production target and migration sources follows the same
 unsupported-version path; VUA creates no separate product class for a particular distribution
 suffix. It reports the detected version, required production target, and available installation
-guidance while leaving `ProjectSettings/ProjectVersion.txt` unchanged. Unity CLI, optional Hub and Editor retain
-credentials, account sessions, and license activation; VUA receives capability and readiness results
-only.
+guidance while leaving `ProjectSettings/ProjectVersion.txt` unchanged.
 
 ## Tuanjie Engine
 
@@ -68,8 +71,12 @@ does not authorize Bridge execution, VRChat SDK validation, building, or upload 
 
 ## Document changelog
 
+- 1.1.1 (2026-10-02): align the Installation route section with the owning deployment document
+  (the original installer installs the Editor; the official CLI registers it) and fix the
+  production-target direction reference; no matrix change.
 - 1.1.0 (2026-09-30): link Hub-independent official CLI installation without changing Editor eligibility.
-
+- 1.0.2 (2026-10-01): move the credential-ownership sentence out of the version-classification
+  section into the general support-matrix text and refresh the stale header date; no matrix change.
 - 1.0.1 (2026-09-28): erratum — the "M0 enforcement requirements" section is renamed
   "Enforcement requirements" and its closure bullet drops the M0 label following the 2026-09-28
   sequence change; no rule change.

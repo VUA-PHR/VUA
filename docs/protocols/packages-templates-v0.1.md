@@ -12,8 +12,6 @@
 > (Freeze provenance: proposal 027 F5 freeze batch — the U14 ruling (3)
 > founding authority, the 027 core stance 5 three-domain convergence, the face
 > order F2->F3->F5 registered by batches 121-130.)
-> Authoritative pair: this file and `packages-templates-v0.1.md` (one
-> semantics, bilingual mirror).
 > Word-face authority: `schemas/packages-templates/v0.1/` (command + result
 > schemas and the positive/negative example vectors). This document explains;
 > the schemas bind.
@@ -25,6 +23,21 @@
 > VERSION_V01`/`PACKAGES_TEMPLATES_SCHEMA_VERSION_V01` + the served row
 > `packages.templatesOps` + wire tests 7 cases riding the real frame loop;
 > word face ZERO change).
+> Erratum (2026-10-02): the header's former "Authoritative pair … bilingual
+> mirror" line was a bilingual-era leftover that cited this file itself — the
+> Chinese mirror no longer exists and this English file is the sole canonical
+> document per the 2026-09-25 language ruling; the line is removed, and a
+> naming-convention note is added at the served-row bullet below. Protocol
+> version and normative content unchanged.
+> Erratum (2026-10-02): the four live W25-window deferrals below (the
+> template metadata-file verification in the field-ceiling ruling, the
+> "Once the W25 … establishes template metadata facts" dependency, the
+> "W25 incidental item", and the closing walkthrough line) are reworded to
+> pending/unscheduled — the W25 window is retired (the development outline
+> supersedes the W25 schedule); the items themselves stay open. The "W25
+> read-only evidence record, 027 proposal s6(f)" mention is the historical
+> name of the completed 2026-09-20 verification and stays intact. Protocol
+> version and normative content unchanged.
 
 ## What this face is
 
@@ -152,8 +165,9 @@ packages-repos v0.1 law).
 The environment verification (027 proposal s4, closing note) established:
 template metadata (display name/description) has **zero library-face support**
 — whether a `package.json` exists inside a template directory and its shape
-are unverified (the VCC template spec file is not on this machine; a W25
-real-machine read-only item). Two candidate shapes were on the table:
+are unverified (the VCC template spec file is not on this machine; a
+real-machine read-only item, pending; unscheduled — the W25 window is
+retired). Two candidate shapes were on the table:
 
 1. Rows carry `description: string | null` (required nullable — the literal
    "metadata honestly null" shape);
@@ -166,8 +180,8 @@ null occupying a wire key — a constant is not a fact (the F2 compatible law);
 ORC-DEV-004: no implementation, no reservation. A row carrying `description`
 (or `author`, `license`, `sourceRoot`, `version`, or any invented fact) is
 INVALID by schema — the negative vectors pin it: a false-assertion guard, not
-a convention. Once the W25 real-machine verification establishes template
-metadata facts, metadata fields go through a v0.2 row-directory increment —
+a convention. Once a real-machine verification establishes template
+metadata facts (pending; unscheduled — the W25 window is retired), metadata fields go through a v0.2 row-directory increment —
 never an in-place revision of this frozen v0.1.
 
 Why the `name` same-value projection stays while description does not: the
@@ -209,7 +223,11 @@ Wiring facts (landed at this batch):
 
 - **Served row `packages.templatesOps`** (the A3/A4/A5/F2 one-row-one-method
   precedent — the packages-templates family projects onto the served row name
-  isomorphically with the F2 repo-catalog): available exactly when a wired
+  isomorphically with the F2 repo-catalog; the same naming-convention break
+  as F2, registered honestly: the `Ops` suffix elsewhere marks write faces,
+  while this row serves a read-only query — the row name is frozen
+  served-capability vocabulary and stays unchanged): available exactly when a
+  wired
   backend's `template_capabilities().list_templates` is true; the default
   declared-none keeps the row honestly unavailable until the environment
   override flips it.
@@ -255,8 +273,8 @@ its roots. This face:
   The real-machine incidental observation is on file (the W25 read-only
   evidence record, 027 proposal s6(f)): the real `VRCTemplates/` holds
   exactly 5 directories (Avatar / Avatar 2019 / Base / World / World 2019,
-  directory-name readings), metadata-file shape unverified (a W25 incidental
-  item).
+  directory-name readings), metadata-file shape unverified (a real-machine
+  incidental item, pending; unscheduled — the W25 window is retired).
 - **The test isolation face.** All tests (this batch's consumer tests, the
   environment implementation-verification slice, and any future fixture) run
   exclusively on a **temporary environment root** injected via
@@ -275,7 +293,8 @@ its roots. This face:
   face carries zero create/preview/write methods.
 - Template metadata (description/author/license/versions etc.): no v0.1
   producer, invalid by schema (ORC-DEV-004: no implementation, no reserved
-  field); a v0.2 row-directory increment once W25 establishes the facts.
+  field); a v0.2 row-directory increment once a real-machine verification
+  establishes the facts (pending; unscheduled — the W25 window is retired).
 - Per-row `sourceRoot` root disclosure: no consumer need, create's resolution
   order is already the frozen fact; invention is invalid.
 - `cacheSourced`: a zero-network face has no cache-degradation semantics, a
@@ -296,7 +315,7 @@ after shape approval; the library implementation (the two-root directory scan
 + the capability override) belongs to the environment
 implementation-verification slice, and until it lands every wired backend
 stays on the honest absence arm (the served row honestly unavailable); the
-full-chain real-machine walkthrough stays in the W25 window (O-2, waiting for
-the user to open the window). The empty state is the final state: an empty
+full-chain real-machine walkthrough is pending; unscheduled (the W25 window
+is retired). The empty state is the final state: an empty
 templates array renders as the designed empty state, never filled with
 guessed content; unavailable metadata means no metadata key, never invented.

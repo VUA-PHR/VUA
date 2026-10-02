@@ -15,8 +15,12 @@ The current Rust workspace directly declares the following third-party crates:
 | `rusqlite` | MIT | Orchestrator authoritative-task SQLite adapter |
 | `serde`, `serde_json` | MIT OR Apache-2.0 | serialization |
 | `sha2` | MIT OR Apache-2.0 | content hashing |
-| `md-5` | MIT OR Apache-2.0 | compare the official Unity Editor manifest checksum |
-| `windows-sys` | MIT OR Apache-2.0 | Windows process supervision and native installer elevation |
+| `scraper` | ISC | HTML parsing for BOOTH page extraction |
+| `url` | MIT OR Apache-2.0 | VPM repository URL parsing |
+| `flate2`, `tar` | MIT OR Apache-2.0 | gzip/tar archive handling for `.unitypackage` materials |
+| `zip` | MIT | zip archive writing for local VPM artifacts |
+| `md-5` | MIT OR Apache-2.0 | official Unity Editor manifest checksum comparison |
+| `windows-sys` | MIT OR Apache-2.0 | Windows Job Object process-tree supervision, Win32 window enumeration and focus for editor handoff, and native installer elevation |
 | `jsonschema` | MIT | schema validation in tests |
 
 `rusqlite` enables its `bundled` feature and statically builds SQLite, which is in the public domain.

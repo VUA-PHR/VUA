@@ -12,7 +12,8 @@
 > desktop entry point)**
 > (2026-09-19, proposal 026 face order A1→A2→A3→A4, the batch-98
 > word-face bisection ruling: add/remove freeze first, enable/disable
-> wording waits for the W25 VCC key-name real-machine verification)
+> wording awaits a real-machine verification of the VCC key name —
+> pending; unscheduled, the W25 window is retired)
 > Machine-readable word list: `schemas/packages-ops/v0.4/` (per-row
 > dual schemas + 6 positive / 11 negative vectors; core consumer tests
 > `crates/provider-host/tests/packages_ops_consumer_v04.rs`; wire
@@ -42,8 +43,19 @@
 > closed-set projection + wire tests + this document NAMES the wire
 > envelope constants — word face ZERO change); 2026-09-19 (v0.4
 > freeze batch: dual schemas + vectors + core consumer tests + TS
-> face + mock constant-absence arms + bilingual protocol doc +
+> face + mock constant-absence arms + protocol document +
 > REGISTRY)
+> Erratum (2026-10-02): the newest slice of this family is
+> [packages-ops-v0.6.md](packages-ops-v0.6.md); the six slices are concurrent
+> faces — v0.6 is not a blanket replacement of v0.1–v0.5. Bilingual-era
+> wording removed from the Updated lines (the EN mirror no longer exists;
+> this English file is the sole canonical document per the 2026-09-25
+> language ruling). The three W25-window deferrals (the Status line's VCC
+> key-name verification wait, the enable/disable bullet in "Explicitly
+> OUTSIDE this word face", and the end-to-end walkthrough line) are
+> reworded to pending/unscheduled — the W25 window is retired (the
+> development outline supersedes the W25 schedule); the items themselves
+> stay open. Protocol version and normative content unchanged.
 
 ## A4 word-face semantics (subscription writes are deliberately NOT a preview/apply pair)
 
@@ -169,8 +181,10 @@
 - **Enable/disable (start/stop)**: the library's `UserRepoSetting` has
   no enabled field and the settings model has no disabled-list
   modeling — the VCC disabled-list key name and semantics must be
-  verified on a real machine (the W25 window item, the 024 (b)
-  `vcc.liteDb` verification can ride the same window) before any
+  verified on a real machine (pending; unscheduled — the W25 window is
+  retired; the 024 (b)
+  `vcc.liteDb` verification can ride the same window whenever one is
+  scheduled) before any
   start/stop word face is frozen. Until then enable/disable is in NO
   frozen word face and no wire method exists for it.
 - **Reorder**: the library surface is complete, but the batch-98
@@ -211,5 +225,5 @@ facts.
   unavailable until they do); the real backend consumption is the
   environment implementation-verification slice. The wire tests ride
   the real frame loop and fake backends; the end-to-end walkthrough
-  stays with W25 (pending the user opening window O-2). Nothing here
+  is pending; unscheduled (the W25 window is retired). Nothing here
   claims real-machine behavior.

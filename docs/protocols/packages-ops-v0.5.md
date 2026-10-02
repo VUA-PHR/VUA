@@ -11,9 +11,12 @@
 > are in tree — desktop consumption rides the per-face upgrade, until
 > it lands the method has no desktop entry point)**
 > (2026-09-19, proposal 026 face order A1→A2→A3→A4→A5; the A5 start
-> ruling = core, 2026-09-19 01:3x — start granted / timing last /
+> ruling = core, 2026-09-19 01:15 +0800 — start granted / timing last /
 > word-face direction six points / carrier declaration, recorded in the
-> wt-2 state file at generation 8afde3f; the desktop entry-need five
+> wt-2 state file at generation 8afde3f (commit `8afde3f3`; the collab
+> state files are retired — final snapshots archived under
+> [docs/archive/2026-09-29/collab/state/](../archive/2026-09-29/collab/state/));
+> the desktop entry-need five
 > points = the 026 inline desktop stance section a4c74a7)
 > Machine-readable word list: `schemas/packages-ops/v0.5/` (per-row
 > dual schemas + 3 positive / 10 negative vectors; core consumer tests
@@ -42,8 +45,29 @@
 > assembly + all-refusals-fold projection + wire tests + this document
 > NAMES the wire envelope constants — word face ZERO change);
 > 2026-09-19 (v0.5 freeze batch: dual schemas + vectors + core
-> consumer tests + TS face + mock constant-absence arm + bilingual
-> protocol doc + REGISTRY)
+> consumer tests + TS face + mock constant-absence arm + protocol
+> document + REGISTRY)
+> Erratum (2026-10-02): the newest slice of this family is
+> [packages-ops-v0.6.md](packages-ops-v0.6.md); the six slices are concurrent
+> faces — v0.6 is not a blanket replacement of v0.1–v0.5. Bilingual-era
+> wording removed from the Updated lines (the EN mirror no longer exists;
+> this English file is the sole canonical document per the 2026-09-25
+> language ruling); the rejected-code pattern below now renders the regex
+> itself (`^vua\.packages\.`), matching the frozen schema (whose JSON
+> source encodes it as `^vua\\.packages\\.`). Protocol version and
+> normative content unchanged.
+> Erratum (2026-10-02): provenance repair in the Status line above.
+> (1) The redacted pseudo-timestamp "2026-09-19 01:3x" is corrected from
+> git history: the A5 start-ruling state batch is commit `8afde3f3`,
+> dated 2026-09-19 01:15:12 +0800.
+> (2) "the wt-2 state file at generation 8afde3f" refers to the retired
+> collab per-tree state files; the cited generation survives as commit
+> `8afde3f3` in this repository, and the final snapshots are archived at
+> [docs/archive/2026-09-29/collab/state/](../archive/2026-09-29/collab/state/).
+> (3) The "stays W25 (waiting for the user to open O-2)" deferral below
+> is reworded to pending/unscheduled — the W25 window is retired (the
+> development outline supersedes the W25 schedule); the walkthrough
+> itself stays open. Protocol version and normative content unchanged.
 
 ## A5 word-face semantics (project creation is deliberately NOT a preview/apply pair — the second no-pair member)
 
@@ -150,7 +174,7 @@
   - `vua.vpm.backend_unavailable` — the CLI path runner-spawn failure
     (the library path never answers this).
   The reused `vua.vpm.*` codes never travel in the `code` key (the 013
-  reuse-code law; the pattern stays locked to `^vua\\.packages\\.`,
+  reuse-code law; the pattern stays locked to `^vua\.packages\.`,
   negative vector).
 - **The two backends' refusal shapes DIVERGE (declared honestly, no
   unified shape invented).** The library path's four key semantics
@@ -230,6 +254,6 @@ transports facts.
   the environment implementation-verification slice follows per the
   024/025 procedure. Wire tests riding the real frame loop with fake
   backends landed with the wiring batch
-  (`packages_ops_wire_v05.rs`); the end-to-end walkthrough stays W25
-  (waiting for the user to open O-2). This document claims no
+  (`packages_ops_wire_v05.rs`); the end-to-end walkthrough is pending;
+  unscheduled (the W25 window is retired). This document claims no
   real-machine behavior.

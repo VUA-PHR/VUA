@@ -1,6 +1,6 @@
 # Documentation audit and disposition - 2026-09-28
 
-> Document version: 1.0.1
+> Document version: 1.0.2
 > Status: Accepted
 > Scope: Source/document audit for the N-sequence reorganization
 > Normative effect: Records observed state and document disposition, not feature acceptance
@@ -79,6 +79,9 @@ their implementation-specific reviews; a link/registry pass does not complete th
 
 ## Document changelog
 
+- 1.0.2 (2026-10-02): note that this snapshot's disposition to retain the collab:brief checker and
+  the report-only CI was superseded by the full collab retirement on 2026-10-02 (checker script,
+  workflow and command removed); the audit's other dispositions are unaffected.
 - 1.0.1 (2026-09-28): record follow-up consistency fixes and keep host facts local.
 
 

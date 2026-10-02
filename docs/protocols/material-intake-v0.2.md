@@ -10,6 +10,12 @@
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
 > Updated: 2026-09-22
 > Previous: [v0.1](material-intake-v0.1.md) (2026-09-05, kept as history)
+> Erratum (2026-10-02): the C#-side reject vertical slice note below deferred
+> to "the W25 real-machine window (BOARD #45)"; the W25 window is retired
+> (the development outline supersedes the W25 schedule), so the deferral now
+> reads as pending and unscheduled, with the BOARD row pointed at its archive
+> location. The slice itself stays open. Protocol version and normative
+> content unchanged.
 
 The ONLY word-face change in v0.2 versus v0.1: the closed step-kind set gains
 `provision_project` (plan schema promoted to
@@ -74,8 +80,11 @@ the pin or a gate without narrowing the C# face is a forbidden order. (3)
 expectation of the C# materialization face" is recalibrated in the same batch
 — what batch 150 made impossible is the divergence MATERIALIZING through the
 chain, not a narrowing of the C# letter. The C#-side reject vertical slice
-(option A: C# refusal + UTF test + this note, one slice) stays queued for the
-W25 real-machine window (BOARD #45), where the in-repo EditMode suite can
+(option A: C# refusal + UTF test + this note, one slice) stays queued for a
+real-machine window, pending and unscheduled (the W25 window is retired;
+historically BOARD row #45, now archived at
+[docs/archive/2026-09-29/collab/BOARD.md](../archive/2026-09-29/collab/BOARD.md)),
+where the in-repo EditMode suite can
 actually run; this annotation is the base that slice needs regardless.
 
 ## Batch and naming

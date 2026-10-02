@@ -3,7 +3,8 @@
 
 > **⚠️ Superseded by v0.3 (2026-09-06)**: artifact-mode dual read fields, the
 > copy role bit and the closed entry-kind vocabulary. The current protocol is
-> [bdl-queries-v0.3.md](bdl-queries-v0.3.md); this document remains as
+> [bdl-queries-v0.5.md](../bdl-queries-v0.5.md) (the immediate successor v0.3,
+> and v0.4 after it, are themselves superseded); this document remains as
 > history only, matching `schemas/bdl-queries/v0.2/` (do not edit).
 >
 > Document version: 0.2

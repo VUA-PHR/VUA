@@ -1,16 +1,17 @@
 # ALCOM/VCC Project Compatibility Matrix
 
 
-> Document version: 1.3.2
+> Document version: 1.3.3
 > Status: Accepted  
 > Scope: read-only compatibility detection and capability matrix for ALCOM/VCC-managed projects  
-> Updated: 2026-09-23  
-> Authority: `docs/product-boundary.md` 2.0.0 (user ruling U3, 2026-09-08; settings-face
-> exception U14, 2026-09-19)
+> Updated: 2026-10-01  
+> Authority: `docs/product-boundary.md` 2.2.3 (user ruling U3, 2026-09-08; settings-face
+> exception U14, 2026-09-19 — the cited clauses read unchanged since product-boundary 2.0.0)
 
 ## Authority and hard boundary
 
-This matrix elaborates product-boundary 2.0.0 and introduces no new semantics. VUA is
+This matrix elaborates the product boundary (the U3/U14 clauses read unchanged since
+product-boundary 2.0.0) and introduces no new semantics. VUA is
 **read-only** toward projects managed by ALCOM/VCC; the only write path is the
 user-chosen "import as a VUA-managed copy" (new project path and identity, disk usage
 stated up front, no copying of regenerable directories or old task state, re-Inspect
@@ -22,7 +23,7 @@ settings (the repository-subscription and local-package-registry faces of `setti
 are one file shared with VCC/ALCOM; VUA reads and writes that face by ruling, with changes
 immediately visible to both sides. All other storage faces such as `vcc.liteDb` stay
 denied, and the project-file face stays read-only (authoritative wording in the
-product-boundary 2.0.0 "explicit boundary" section).
+product boundary's "Explicit boundaries" section).
 
 **Allowed** (every check in this matrix is inside this list):
 
@@ -102,7 +103,7 @@ detection face, not a defect awaiting a fix.
 - User-visible source wording uses uncertainty semantics ("this project looks like
   it is managed by other software", "taking it over may have unknown consequences"),
   never assertion semantics. The concrete copy belongs to the desktop presentation
-  domain (BOARD B5②); the factual basis is this section;
+  domain (user walkthrough ruling, 2026-09-12); the factual basis is this section;
 - The detection face reports only what it sees; missing, failed, and unparseable
   states are presented as typed states, never invented assertions.
 
@@ -134,11 +135,16 @@ inspection face never writes.
   package/SDK/lock rows + the VUA-native identity row; protocol document
   [project-inspection-v0.2](../protocols/project-inspection-v0.2.md));
 - Command-face wire vocabularies: project-inspection v0.2 (four read queries) and
-  project-ops v0.1 (`project.import-copy`) are both frozen and wired
-  ([project-ops-v0.1](../protocols/superseded/project-ops-v0.1.md)).
+  project-ops v0.2 (`project.import-copy`, whose shape is unchanged from the superseded
+  v0.1, plus `project.setNote`) are both frozen and wired
+  ([project-ops-v0.2](../protocols/project-ops-v0.2.md)).
 
 ## Document changelog
 
+- 1.3.3 (2026-10-01): cite the current frozen project-ops v0.2 face instead of the superseded
+  v0.1, refresh the authority pin to product-boundary 2.2.3 (the U3/U14 clauses were verified
+  unchanged since 2.0.0), and reword the live BOARD B5② body reference as the dated 2026-09-12
+  walkthrough ruling; no rule change.
 - 1.3.2 (2026-09-28): erratum — authority pointers refreshed to product-boundary 2.0.0 (the U3/U14
   clauses are retained verbatim there) and the "inside the `1.0.x` boundary" phrase replaced by
   "under the current product boundary"; no rule change.

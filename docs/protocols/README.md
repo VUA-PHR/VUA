@@ -1,8 +1,8 @@
 # Protocol reading guide
 
-> Document version: 1.3.0
+> Document version: 1.3.1
 > Status: Accepted
-> Updated: 2026-09-30
+> Updated: 2026-10-02
 > Scope: Navigation and retention guidance; no wire-format changes
 
 **For people:** use this index when a contribution affects an API or stored format; read only
@@ -20,9 +20,9 @@ separate concurrently served operations, and some newer documents extend an earl
 | --- | --- | --- |
 | Gateway/tasks | [Application](application-contract-v0.1.md), [task store](task-store-v0.1.md), [Provider](provider-process-v0.1.md) | Current shared boundaries; document version and wire version may differ |
 | Environment/projects | [Inspection](project-inspection-v0.2.md), [project operations](project-ops-v0.2.md), [editor verification](editor-verify-v0.1.md) | Preserve current guards and external-project read-only policy |
-| Package reads | [Query](packages-query-v0.2.md), [catalog](packages-catalog-v0.2.md), [repository list](packages-repos-catalog-v0.1.md), [repository packages](packages-repo-catalog-v0.1.md), [repositories](packages-repos-v0.2.md), [templates](packages-templates-v0.1.md) | Check method consumers before retiring an older face |
+| Package reads | [listInstalled v0.2](packages-query-v0.2.md), [packageCatalog v0.2](packages-catalog-v0.2.md), [listRepos + packageCatalog v0.1 base spec](packages-repos-catalog-v0.1.md), [repoCatalog per-repository inventory](packages-repo-catalog-v0.1.md), [listRepos v0.2 increment](packages-repos-v0.2.md), [listTemplates](packages-templates-v0.1.md) | Check method consumers before retiring an older face |
 | Package writes | [v0.1](packages-ops-v0.1.md), [v0.2](packages-ops-v0.2.md), [v0.3](packages-ops-v0.3.md), [v0.4](packages-ops-v0.4.md), [v0.5](packages-ops-v0.5.md), [v0.6](packages-ops-v0.6.md) | Concurrent faces: provider constants and TS types use all six; v0.6 is not blanket replacement of v0.1-v0.5 |
-| Materials/production | [Material v0.2](material-intake-v0.2.md), [production v0.2](production-use-case-v0.2.md), [evidence](production-evidence-v0.1.md) | Earlier baselines may be needed for incremental definitions and tests; not archived by date |
+| Materials/production | [Material v0.2](material-intake-v0.2.md), [production v0.2](production-use-case-v0.2.md), [evidence](production-evidence-v0.1.md), [inspection queries](inspection-queries-v0.1.md), [inspection evidence](inspection-evidence-v0.1.md) | Earlier baselines may be needed for incremental definitions and tests; not archived by date |
 | Recipe/SDK | [Recipe export](recipe-export-v0.1.md), [handoff v0.2](release-handoff-v0.2.md) | Check stored-format and consumer compatibility before retiring the earlier handoff face |
 | BDL/acquisition | [Queries v0.5](bdl-queries-v0.5.md), [commands v0.4](bdl-commands-v0.4.md), [observations](bdl-dependency-observations-v0.2.md), [downloads](download-events-v0.1.md) | Follow actual schema/route versions; N5 audit is still required |
 | Unity | [v4](unity-bridge-v4.md), [v3](unity-bridge-v3.md), [v2](unity-bridge-v2.md), [v1](unity-bridge-v1.md) | Newest frozen operation set does not prove every production path migrated; inspect actual command consumers |
@@ -67,6 +67,7 @@ For upstream-driven changes, follow the [third-party compatibility and licensing
 
 ## Document changelog
 
+- 1.3.1 (2026-10-02): index inspection-queries/inspection-evidence in the Materials/production row; disambiguate the packages-repos-catalog / packages-repo-catalog / packages-repos labels (v0.1 combined base spec vs per-repository inventory vs v0.2 increment).
 - 1.3.0 (2026-09-30): route the executable Candidate N1 deployment family separately from pending account guidance.
 
 - 1.2.0 (2026-09-30): add direct family links, scoped delivery-status guidance and contract-to-code reading routes.

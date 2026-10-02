@@ -6,7 +6,7 @@
 > closed: (1) the producing Bridge operations landed and accepted 〔merge
 > 7d63abe〕, (2) the core-side store, read routes and task-driven request
 > command landed and accepted 〔merge 7a262b8〕, (3) vectors green plus
-> consumer tests in-tree; (4) this bilingual protocol document and (5) the
+> consumer tests in-tree; (4) this protocol document and (5) the
 > REGISTRY row land with this freeze batch)
 > Machine-readable vocabulary: `schemas/inspection-evidence/v0.1/` (schema +
 > 2 positive / 5 negative vectors; validation test
@@ -24,6 +24,10 @@
 > Maintainer: Production line (BG-4 ticket lead; core / environment / data
 > stances in collaboration, integration arbitration adopted as-is)
 > Updated: 2026-09-13
+> Erratum (2026-10-02): bilingual-era wording removed from the Status line
+> above (the EN mirror no longer exists; this English file is the sole
+> canonical document per the 2026-09-25 language ruling). Protocol version
+> and normative content unchanged.
 
 ## Semantics
 

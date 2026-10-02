@@ -9,8 +9,10 @@
 > ruling 6 [bf78368], all three disclosure-ward; the core stance node and
 > the freeze batch landed in the same round, stance first)
 > Machine-readable word list: `schemas/packages-catalog/v0.2/` (command
-> byte-identical to v0.1; result = v0.1 plus exactly one new REQUIRED key,
-> with 4 positive and 5 negative vectors; core consumer tests
+> byte-identical to v0.1 — the v0.1 word face lives in
+> [packages-repos-catalog-v0.1.md](packages-repos-catalog-v0.1.md); result =
+> v0.1 plus exactly one new REQUIRED key, with 4 positive and 5 negative
+> vectors; core consumer tests
 > `crates/provider-host/tests/packages_p2_consumer.rs`; TS face
 > `packages/contracts/src/application-contract.ts`)
 > Scope: ONLY the `packages.packageCatalog` **result family** bumps to
@@ -24,7 +26,27 @@
 > desktop consumption = desktop domain (consumption-update batch:
 > dual-family-const acceptance + the cacheSourced annotation)
 > Updated: 2026-09-17 (v0.2 increment freeze batch: Schema + vectors +
-> core consumer tests + TS face + bilingual protocol text + REGISTRY)
+> core consumer tests + TS face + protocol document + REGISTRY)
+> Erratum (2026-10-02): bilingual-era wording removed from the Updated line
+> (the EN mirror no longer exists; this English file is the sole canonical
+> document per the 2026-09-25 language ruling), and the v0.1 base spec is
+> now linked inline at the machine-readable word list line above. Protocol
+> version and normative content unchanged.
+> Erratum (2026-10-02): open-items state refresh — the "Honesty boundary
+> and open items" bullets below are stale. Verified against the code on
+> main: the live layer is NOT "pinned strictly to v0.1" — the desktop
+> consumption-update batch landed with dual-family-const acceptance in
+> `apps/desktop/src/renderer/gateway/packages-live.ts` (:492 the v0.1
+> guard, :501 the v0.2 guard, :1219 the stamped-family dispatch) and the
+> cacheSourced=true "cached data" informational annotation in
+> `apps/desktop/src/renderer/features/packages/PackagesPage.tsx:1277`;
+> the cited "packages-live.ts:149" is an unrelated comment line. The
+> environment incremental batch also landed (`catalog_compatible`
+> re-creates all four `unity_compatible` arms at
+> `crates/project-manager/src/vpm_backend.rs:911`; the `catalog_v02` /
+> `package_catalog_v02` adaptation with the cacheSourced contribution at
+> :1466/:1470). The W25 framing in the last bullet is retired (window
+> superseded). Protocol version and normative content unchanged.
 
 ## The increment (exactly one new key)
 
@@ -107,15 +129,19 @@ divergence unit tests.
 
 ## Honesty boundary and open items
 
-- Environment incremental batch (project-manager): replicate the full
+> Erratum (2026-10-02): the first two bullets are closed — see the header
+> Erratum (2026-10-02) for the landed code locations.
+
+- ~~Environment incremental batch (project-manager): replicate the full
   `unity_compatible` four branches + divergence unit tests +
   `catalog_v02`/`package_catalog_v02` adaptation + the one-line
-  cacheSourced fact contribution.
-- Desktop consumption-update batch: dual-family-const acceptance in the
+  cacheSourced fact contribution.~~ **(landed — Erratum 2026-10-02)**
+- ~~Desktop consumption-update batch: dual-family-const acceptance in the
   live layer (currently pinned strictly to v0.1, packages-live.ts:149) +
   the cacheSourced=true "cached data" informational annotation + shape
-  approval (the P1 full-chain procedure). Interim: the user dev stack has
+  approval (the P1 full-chain procedure).~~ **(landed — Erratum
+  2026-10-02)** Interim: the user dev stack has
   not been restarted (user window pending on record) — no real-machine
   exposure window.
-- Zero end-to-end claim maintained: the real-machine walkthrough stays
-  W25 (user window O-2 pending).
+- Zero end-to-end claim maintained: the real-machine walkthrough is
+  pending; unscheduled (the W25 window is retired).

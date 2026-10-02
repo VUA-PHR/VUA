@@ -26,6 +26,19 @@
 > Authority: the alignment baseline for the F3 presentation layer and the B3 application
 > implementation; method names are registered in the application-contract v0.1 method table
 > (introduced = B3/F3), with value semantics defined here
+> Erratum (2026-10-02): the newest version of this family is
+> [production-use-case-v0.2.md](production-use-case-v0.2.md) (frozen 2026-09-09 — the M5
+> recipe/plan/job/record mainline); the two families coexist on the same provider, and this
+> v0.1 M3 material-line face stays frozen and served unchanged. Protocol version and
+> normative content unchanged.
+> Erratum (2026-10-02): provenance pointer void — freeze precondition ④ cites
+> evidence under `_local_w1/`; no such directory exists (the local-evidence
+> naming convention later settled on `_local_<topic>/` forms such as
+> `_local_real_machine/`, and local evidence directories are gitignored
+> scratch, never committed). The pointer predates the convention and cannot
+> be resolved to a current path; the claim itself (I-1 real-machine matrix
+> 16/16, merge 5ccace6 — the commit exists) is unaffected. Protocol version
+> and normative content unchanged.
 
 ## Lifecycle and task machinery
 

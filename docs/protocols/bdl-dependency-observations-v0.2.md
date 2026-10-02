@@ -7,8 +7,8 @@
 > 168 — the landing slice, registered by the 0.2.1 note; **conservative
 > extractor capability face**, wt-4 production, batch 178 — the 030
 > extractor slice, registered by this 0.2.2 note — both notes change zero
-> frozen word faces). Theschema, positive/negative vectors, and at least one consumer test
-> freeze triad landed together:
+> frozen word faces). The schema, positive/negative vectors, and at least
+> one consumer test freeze triad landed together:
 > - schema: `schemas/bdl/v0.2/schema.sql` (full readable authority,
 >   standalone-executable) + `schemas/bdl/v0.2/002_dependency_
 >   observations.sql` (v0.1→v0.2 incremental migration; STRICT +
@@ -36,6 +36,8 @@
 > (wt-4).
 > Upstream basis: proposal 030 §1 survey (2026-09-21, 9 read-only public-page
 > accesses) + the data seat's inline stance on 030 (2026-09-22)
+> Erratum (2026-10-02): a missing word break in the header ("Theschema" →
+> "The schema") repaired. Protocol version and normative content unchanged.
 
 ## Scope
 

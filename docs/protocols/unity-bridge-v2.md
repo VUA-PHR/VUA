@@ -8,6 +8,9 @@
 > Normative effect: Yes; JSON structures are machine-adjudicated by `schemas/unity-bridge/v2/`
 > Source rulings: proposal 009 (mutual review closed: review points 1–5 all closed + core
 > confirmation of the planRef form)
+> Current family version: [unity-bridge-v4.md](unity-bridge-v4.md) (pointer added 2026-10-02 —
+> v3 and v4 are later frozen supersets; this v2 face stays frozen and remains the production
+> job line's consumption face per the coexistence rules; v1/v2/v3/v4 coexist, never merged).
 
 ## Purpose and boundary
 
@@ -126,6 +129,8 @@ Orchestrator.
 
 ## Document changelog
 
+- v2 erratum (2026-10-02): non-normative — added the header pointer to the current family
+  version (v4); protocol version and normative content unchanged.
 - v2 (2026-09-08): production-line protocol — `execute_production_job` / `restore_project`
   operations, the job-directory file form of the approved plan with Bridge-side local hash
   verification, job receipts (explicit dry-run split + per-step source transcription +
