@@ -60,7 +60,7 @@
 > batch (third Open items bullet) has landed, verified against the code on
 > main: the narrow port `apps/desktop/src/renderer/gateway/
 > recipe-export-port.ts` (029 B-face loop 4) is wired into the live gateway
-> (`apps/desktop/src/renderer/gateway/electron-gateway.ts:216`), and the
+> (`apps/desktop/src/renderer/gateway/electron-gateway.ts:215`), and the
 > recipe-page draft confirmation/completion flow consumes it in
 > `apps/desktop/src/renderer/features/recipe/RecipeProjectDraftExport.tsx:77`.
 > The W25 framing in the body below (the B-face positioning line, the two

@@ -27,9 +27,9 @@
 > ruling). Protocol version and normative content unchanged.
 > Erratum (2026-10-02): open-items state refresh — the Desktop U10 settings
 > slice (first Open items bullet) has landed, verified against the code on
-> main: `apps/desktop/src/electron/gateway-router.ts:108` routes
+> main: `apps/desktop/src/electron/gateway-router.ts:112` routes
 > `environment.verifyEditor`, and
-> `apps/desktop/src/renderer/features/settings/environment-page.tsx:103`
+> `apps/desktop/src/renderer/features/settings/environment-page.tsx:105`
 > consumes it (result narrowing in `environment-settings-model.ts`). Still
 > open: the real-machine walkthrough (pending; unscheduled — the W25
 > window is retired, see the development outline's supersession note) and

@@ -32,10 +32,10 @@
 > batch (first Open items bullet) has landed, verified against the code on
 > main: the TS face carries the bumped row and the
 > `release.openForInspection` method face
-> (`packages/contracts/src/application-contract.ts:2289`, `:2315`); the
+> (`packages/contracts/src/application-contract.ts:2290`, `:2316`); the
 > four-language `errors.releaseHandoff.*` tables landed in sync
-> (`apps/desktop/src/renderer/i18n/strings.en.ts:2701`,
-> `strings.zh-CN.ts:2639`, `strings.ja.ts:2611`, `strings.ko.ts:2603`); the
+> (`apps/desktop/src/renderer/i18n/strings.en.ts:2780`,
+> `strings.zh-CN.ts:2718`, `strings.ja.ts:2690`, `strings.ko.ts:2682`); the
 > Release page's independent-open entry consumes `openForInspection`
 > (`apps/desktop/src/renderer/features/release/release-project-open-panel.tsx:100`).
 > The W25 framing in the "Verification boundary" section and the last

@@ -2,7 +2,7 @@
 
 > Document version: 1.3.1
 > Status: Accepted
-> Updated: 2026-10-01
+> Updated: 2026-10-02
 > Scope: Incremental software and documentation structure for N1-N7
 > Normative effect: Accepted incremental direction; existing wire/storage contracts remain authoritative
 

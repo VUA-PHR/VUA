@@ -43,8 +43,8 @@
 > `crates/bdl-store/src/bdl_queries.rs:31`
 > (`BDL_QUERIES_SCHEMA_VERSION = "0.5"`);
 > (2) the provider-host route arms landed —
-> `crates/provider-host/src/provider_host.rs:5438` (`dependencies.lookup`)
-> and `:5463` (`dependencies.listByProduct`);
+> `crates/provider-host/src/provider_host.rs:5469` (`dependencies.lookup`)
+> and `:5494` (`dependencies.listByProduct`);
 > (3) the renderer TS face landed —
 > `apps/desktop/src/renderer/gateway/dependencies-port.ts`.
 > The bdl-store v0.2 landing also no longer "awaits dispatch": the v0.2

@@ -72,10 +72,8 @@ does not authorize Bridge execution, VRChat SDK validation, building, or upload 
 ## Document changelog
 
 - 1.1.1 (2026-10-02): align the Installation route section with the owning deployment document
-  (the original installer installs the Editor; the official CLI registers it), fix the
-  production-target direction reference, move the credential-ownership sentence out of the
-  version-classification section into the general support-matrix text, and refresh the stale
-  header date; no matrix change.
+  (the original installer installs the Editor; the official CLI registers it) and fix the
+  production-target direction reference; no matrix change.
 - 1.1.0 (2026-09-30): link Hub-independent official CLI installation without changing Editor eligibility.
 - 1.0.2 (2026-10-01): move the credential-ownership sentence out of the version-classification
   section into the general support-matrix text and refresh the stale header date; no matrix change.
