@@ -13,8 +13,8 @@ use std::{
 };
 use vua_orchestrator::deployment::{
     DeploymentAction, DeploymentAdapter, DeploymentInstaller, DeploymentIntent,
-    DeploymentObservation, DeploymentPresence, DeploymentPurpose, DownloadRegion,
-    EditorDownloadPolicy,
+    DeploymentObservation, DeploymentPresence, DeploymentPurpose, DeploymentReporter,
+    DownloadRegion, EditorDownloadPolicy,
 };
 use vua_orchestrator::{
     EnvironmentEngine, EnvironmentPresence, EnvironmentRoots, ProcessRunner, StdProcessRunner,
@@ -189,6 +189,7 @@ impl DeploymentAdapter for WindowsDeploymentAdapter {
         intent: &DeploymentIntent,
         action: DeploymentAction,
         confirmed: &DeploymentInstaller,
+        report: &mut DeploymentReporter<'_>,
     ) -> Result<(), &'static str> {
         intent.validate()?;
         let _machine_lease = InstallLease::acquire()?;
@@ -213,6 +214,7 @@ impl DeploymentAdapter for WindowsDeploymentAdapter {
             confirmed,
             &self.data_root,
             &EditorDownloadPolicy::new(self.region.detect(), intent.use_mirrors),
+            report,
         )?;
         let after = self.observe(intent);
         let component = if action == DeploymentAction::InstallEditor {

@@ -56,6 +56,38 @@ export interface DeploymentExecuteParams extends DeploymentPlanParams {
   readonly confirmedDigest: string;
 }
 
+export const DEPLOYMENT_PHASES = ["started", "resolving_source", "downloading", "verifying", "installing", "inspecting", "registering", "source_failed", "cache_rejected", "verified"] as const;
+export interface DeploymentProgress {
+  readonly component: string;
+  readonly action: DeploymentStep["action"];
+  readonly phase: typeof DEPLOYMENT_PHASES[number];
+  readonly source?: "official" | "nounitycn";
+  readonly completedBytes?: number;
+  readonly totalBytes?: number;
+  readonly cause?: string;
+}
+
+/** Decode only bounded adapter facts carried inside the existing task-progress params.
+ * Step counts remain separate from bytes; unknown-length transfers have no percentage. */
+export function readDeploymentProgress(v: unknown): DeploymentProgress | null {
+  if (!record(v) || v.operation !== "environment.executeDeployment"
+    || typeof v.component !== "string" || !["steam", "vrchat", "steamvr", "pico_runtime", "unity_hub", "unity_cli", "unity_editor", "android_modules"].includes(v.component)
+    || typeof v.action !== "string" || !["retain", "manual_install", "inspect", "install_editor", "add_android_modules", "install_unity_cli"].includes(v.action)
+    || !DEPLOYMENT_PHASES.some(p => p === v.phase)
+    || (v.source !== undefined && v.source !== "official" && v.source !== "nounitycn")
+    || (v.cause !== undefined && (typeof v.cause !== "string" || !/^vua\.deployment\.[a-z_]{1,64}$/.test(v.cause)))) return null;
+  for (const key of ["completedBytes", "totalBytes"] as const) {
+    if (v[key] !== undefined && (typeof v[key] !== "number" || !Number.isSafeInteger(v[key]) || v[key] < 0)) return null;
+  }
+  if (typeof v.totalBytes === "number" && (v.totalBytes === 0 || typeof v.completedBytes !== "number" || v.completedBytes > v.totalBytes)) return null;
+  if (v.phase === "source_failed" && (v.source === undefined || v.cause === undefined)) return null;
+  return { component: v.component, action: v.action as DeploymentStep["action"], phase: v.phase as DeploymentProgress["phase"],
+    ...(v.source === undefined ? {} : { source: v.source }),
+    ...(v.completedBytes === undefined ? {} : { completedBytes: v.completedBytes as number }),
+    ...(v.totalBytes === undefined ? {} : { totalBytes: v.totalBytes as number }),
+    ...(v.cause === undefined ? {} : { cause: v.cause as string }) };
+}
+
 function record(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }

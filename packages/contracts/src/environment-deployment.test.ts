@@ -2,12 +2,21 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isApplicationRequestV01 } from "./application-contract.js";
 import { isDesktopGatewayRequestV1 } from "./desktop-gateway.js";
-import { DEPLOYMENT_SCHEMA, UNITY_HUB_INSTALL_LINK, isDeploymentIntent, isDeploymentParams, isDeploymentPlanResult, isDeploymentAccepted, isDeploymentCommandId } from "./environment-deployment.js";
+import { DEPLOYMENT_SCHEMA, UNITY_HUB_INSTALL_LINK, isDeploymentIntent, isDeploymentParams, isDeploymentPlanResult, isDeploymentAccepted, isDeploymentCommandId, readDeploymentProgress } from "./environment-deployment.js";
 
 const vectors = JSON.parse(readFileSync(new URL("../../../schemas/environment-deployment/v0.1/intent-vectors.json", import.meta.url), "utf8")) as { name: string; valid: boolean; intent: unknown }[];
 const intent = { purposes: ["pc_avatar"], editorRoot: "C:\\VUA Test\\Editors" };
 const digest = "a".repeat(64);
 describe("deployment v0.1 closed boundary", () => {
+  it("keeps real bytes separate from steps and rejects malformed progress", () => {
+    const facts = { operation: "environment.executeDeployment", component: "unity_editor", action: "install_editor", phase: "downloading", source: "nounitycn", completedBytes: 1024, totalBytes: 2048 };
+    expect(readDeploymentProgress(facts)).toMatchObject({ phase: "downloading", source: "nounitycn", completedBytes: 1024, totalBytes: 2048 });
+    expect(readDeploymentProgress({ ...facts, totalBytes: undefined })?.totalBytes).toBeUndefined();
+    for (const change of [{ phase: "imaginary" }, { source: "other" }, { completedBytes: -1 }, { completedBytes: 2049 }, { completedBytes: NaN }, { totalBytes: 0 }, { cause: "raw credential or vendor log" }, { phase: "source_failed" }]) {
+      expect(readDeploymentProgress({ ...facts, ...change })).toBeNull();
+    }
+    expect(readDeploymentProgress({ ...facts, phase: "source_failed", cause: "vua.deployment.editor_regional_redirect" })?.cause).toBe("vua.deployment.editor_regional_redirect");
+  });
   it("accepts region-aware source order and rejects policy drift or arbitrary mirrors", () => {
     const officialUrl = "https://www.nounitycn.top/download?v=unityhub%3A%2F%2F2022.3.22f1%2F887be4894c44";
     const cli = { component: "unity_cli", action: "retain", reason: "verified", location: null, version: null, officialUrl: null };

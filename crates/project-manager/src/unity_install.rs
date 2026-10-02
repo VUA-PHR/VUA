@@ -10,8 +10,9 @@ use std::{
     time::Duration,
 };
 use vua_orchestrator::deployment::{
-    DeploymentAction, DeploymentInstaller, DeploymentInstallerKind, DeploymentObservation,
-    DeploymentPresence, EditorDownloadPolicy,
+    DeploymentAction, DeploymentActivity, DeploymentInstaller, DeploymentInstallerKind,
+    DeploymentObservation, DeploymentPhase, DeploymentPresence, DeploymentReporter,
+    EditorDownloadPolicy,
 };
 use vua_orchestrator::{ProcessOutcome, ProcessRunner, ProcessSpec};
 
@@ -140,6 +141,7 @@ impl UnityInstallProbe {
         confirmed: &DeploymentInstaller,
         data_root: &Path,
         download_policy: &EditorDownloadPolicy,
+        report: &mut DeploymentReporter<'_>,
     ) -> Result<(), &'static str> {
         let exe = Path::new(&confirmed.location);
         if self
@@ -157,6 +159,7 @@ impl UnityInstallProbe {
                 &confirmed.editor_root,
                 self.runner.as_ref(),
                 download_policy,
+                report,
             )?;
             // CLI "editors add" takes the Editor application, not the container
             // directory chosen by the NSIS installer.
@@ -164,6 +167,7 @@ impl UnityInstallProbe {
             let path = application
                 .to_str()
                 .ok_or("vua.deployment.invalid_location")?;
+            report(DeploymentActivity::new(DeploymentPhase::Registering))?;
             let outcome = self.run(
                 exe,
                 &["--no-log-proxy", "--format", "json", "editors", "add", path],
@@ -173,6 +177,7 @@ impl UnityInstallProbe {
             return Ok(());
         }
         let args = install_args(confirmed.kind, action)?;
+        report(DeploymentActivity::new(DeploymentPhase::Installing))?;
         let outcome = self.run(exe, &args, 7200)?;
         if confirmed.kind == DeploymentInstallerKind::UnityCli {
             cli_install_result(&outcome, action)?;

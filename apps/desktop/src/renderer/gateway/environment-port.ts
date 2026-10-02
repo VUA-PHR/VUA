@@ -1,4 +1,4 @@
-import type { DeploymentIntent, DeploymentPlan, TaskSnapshotV01 } from "@vua/contracts";
+import type { DeploymentIntent, DeploymentPlan, DeploymentProgress, TaskSnapshotV01 } from "@vua/contracts";
 import type { CheckZone, DeployerView, VersionTrack } from "../features/deployer/deployer-model.ts";
 import type { FixPlanV1 } from "../features/deployer/fix-plan-model.ts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
@@ -29,7 +29,7 @@ export interface DeploymentPort {
   status(taskId: string): Promise<TaskSnapshotV01>;
   cancel(taskId: string, revision: number): Promise<void>;
   /** Live step facts; task.get remains authoritative for final/cancellation/recovery state. */
-  subscribe(taskId: string, callback: (step: { component: string; action: DeploymentPlan["steps"][number]["action"]; phase: "started" | "verified" }) => void): Unsubscribe;
+  subscribe(taskId: string, callback: (step: DeploymentProgress) => void): Unsubscribe;
 }
 
 export interface EnvironmentPort {

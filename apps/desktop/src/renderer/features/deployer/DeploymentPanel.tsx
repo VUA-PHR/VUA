@@ -1,7 +1,7 @@
 /** N1 presentation only. The Gateway owns plans, execution and task facts. Changing intent
  * invalidates displayed consent; an opened official page never changes readiness locally. */
 import { useEffect, useRef, useState } from "react";
-import { DEPLOYMENT_PURPOSES, UNITY_HUB_INSTALL_LINK, isTerminalTaskStateV01, type DeploymentPlan, type DeploymentPurpose, type TaskSnapshotV01 } from "@vua/contracts";
+import { DEPLOYMENT_PURPOSES, UNITY_HUB_INSTALL_LINK, isTerminalTaskStateV01, readDeploymentProgress, type DeploymentPlan, type DeploymentProgress, type DeploymentPurpose, type TaskSnapshotV01 } from "@vua/contracts";
 import { useGateway } from "../../gateway/index.ts";
 import { strings } from "../../i18n/index.ts";
 import { openExternalUrl } from "../../app/open-external.ts";
@@ -25,9 +25,18 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
   const [taskId, setTaskId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<{ component: string; action: DeploymentPlan["steps"][number]["action"]; phase: "started" | "verified" } | null>(null);
+  const [step, setStep] = useState<DeploymentProgress | null>(null);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now);
   const command = useRef<string | null>(null);
   const active = taskId !== null && (task === null || (!isTerminalTaskStateV01(task.state) && task.recoveryDisposition !== "inspect_required"));
+
+  // This clock shows elapsed time only. Installer progress comes from adapter events.
+  useEffect(() => {
+    if (!active) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [active]);
 
   useEffect(() => { setPlan(null); command.current = null; }, [useMirrors]);
 
@@ -77,7 +86,7 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
     try {
       const id = await port.execute(plan, command.current);
       if (id === taskId) setTask(await port.status(id));
-      else { setTask(null); setTaskId(id); }
+      else { setTask(null); setStep(null); setStartedAt(Date.now()); setNow(Date.now()); setTaskId(id); }
     }
     catch { setError(copy.executeFailed); }
     finally { setBusy(false); }
@@ -85,6 +94,10 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
   const disabled = busy || active;
   const outcome = task?.result?.outcome;
   const failedComponent = task?.error?.params?.component;
+  const sourceFailures = Array.isArray(task?.result?.sourceFailures) ? task.result.sourceFailures.flatMap(value => {
+    const p = typeof value === "object" && value !== null ? readDeploymentProgress({ ...value, operation: "environment.executeDeployment", component: "unity_editor", action: "install_editor" }) : null;
+    return p?.phase === "source_failed" ? [p] : [];
+  }) : [];
   return <Card className="vua-deployment">
     <h2 className="vua-title">{copy.title}</h2>
     <p>{copy.description}</p>
@@ -116,13 +129,20 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
     </> : null}
     {task !== null ? <div role="status" aria-live="polite">
       <p>{task.recoveryDisposition === "inspect_required" ? copy.inspectRequired : copy.states[task.state]}</p>
-      {step !== null ? <p>{copy.components[step.component as keyof typeof copy.components]}{": "}{step.phase === "verified" ? copy.reasons.verified : copy.actions[step.action]}</p> : null}
+      {step !== null ? <>
+        <p>{copy.components[step.component as keyof typeof copy.components]}{": "}{copy.phases[step.phase]}{step.source === undefined ? "" : ` (${copy.downloadSources[step.source]})`}</p>
+        {step.completedBytes !== undefined ? <p>{copy.transferred}{": "}{(step.completedBytes / 1048576).toFixed(1)}{step.totalBytes === undefined ? "" : ` / ${(step.totalBytes / 1048576).toFixed(1)}`} MiB</p> : null}
+        {step.completedBytes !== undefined && step.totalBytes !== undefined ? <progress aria-label={copy.phases[step.phase]} value={step.completedBytes} max={step.totalBytes} /> : null}
+        {step.phase === "installing" ? <p className="vua-caption">{copy.installingHint}</p> : null}
+      </> : null}
+      {active && startedAt !== null ? <p className="vua-caption">{copy.elapsed}{": "}{Math.max(0, Math.floor((now - startedAt) / 1000))} s</p> : null}
       {typeof failedComponent === "string" && Object.hasOwn(copy.components, failedComponent) ? <p>{copy.components[failedComponent as keyof typeof copy.components]}</p> : null}
       {task.error !== undefined ? <p>{copy.failedHint}<code>{task.error.code}</code></p> : null}
       {task.error?.code === "vua.deployment.vendor_install_failed" ? <p>{copy.vendorInstallFailed}</p> : null}
       {task.error?.code === "vua.deployment.vendor_result_unreadable" ? <p>{copy.vendorResultUnreadable}</p> : null}
       {outcome === "manual_required" && task.result?.handoff === "unity_hub" && task.result?.handoffUrl === UNITY_HUB_INSTALL_LINK ? <>
         <p>{copy.hubFallback}</p>
+        {sourceFailures.length > 0 ? <details><summary>{copy.sourceFailures}</summary><ul>{sourceFailures.map((failure, index) => <li key={index}>{copy.downloadSources[failure.source!]}{": "}<code>{failure.cause}</code></li>)}</ul></details> : null}
         <Button onClick={() => { void openExternalUrl(UNITY_HUB_INSTALL_LINK); }}>{copy.openHub}</Button>
         <Button variant="subtle" onClick={() => { void openExternalUrl("https://unity.com/download"); }}>{copy.getHub}</Button>
       </> : outcome === "manual_required" ? <p>{copy.manualRequired}</p> : null}
