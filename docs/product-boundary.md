@@ -1,7 +1,7 @@
 # VUA product boundary
 
 
-> Document version: 2.8.0
+> Document version: 2.8.1
 > Status: Accepted
 > Scope: Entire VUA product
 > Updated: 2026-10-03
@@ -219,7 +219,7 @@ or PICO Connect streaming. It delivers the following bounded scope:
 
 - Inspect the relevant Internet services and download sources; distinguish these failures from
   local PC/headset connectivity. Explain useful remedies and recheck after the user's action.
-  Mainland-China guidance may suggest an accelerator such as NetEase UU, with the existing
+  The first mainland-China accelerator recommendation is only NetEase UU, with the existing
   no-financial-relationship disclosure. Region is a correctable hint, not a connectivity verdict.
 - Guide Steam registration, verification and client login. Existing accounts skip registration.
   Explain VRChat's first login with Steam; a full VRChat account and account linking remain
@@ -266,7 +266,7 @@ Prefer supported silent installation with a visible task: actual phase, elapsed 
 progress/activity, interaction requests and next actions during prolonged inactivity. Verify
 installed results and keep user actions attached to that task. Route-specific account guidance,
 headset activation and regional connectivity are N1 prerequisites. For mainland-China users,
-evaluate dedicated activation/acceleration services and offer services such as NetEase UU with
+evaluate dedicated activation/acceleration services; the first accelerator recommendation is NetEase UU with
 an explicit no-financial-relationship disclosure. Region informs suggestions; target-service
 reachability and user correction refine the plan. Existing privacy boundaries apply.
 See the [N1 delivery plan](development/n1-delivery-plan.md).
@@ -478,6 +478,8 @@ plugin execution and a marketplace still require their separately accepted secur
 
 ## Document changelog
 
+- 2.8.1 (2026-10-03): limit the initial accelerator recommendation to NetEase UU per the author's ruling.
+
 - 2.8.0 (2026-10-03): bound the first play release to desktop/PICO onboarding, a desktop guide overlay and ZIP distribution; retain wider N1 work for later deliveries.
 - 2.7.0 (2026-10-02): make CLI-led official acquisition first in every region and identify the actual downloaded edition; mirrors are optional backups.
 
@@ -493,6 +495,5 @@ plugin execution and a marketplace still require their separately accepted secur
 - 2.3.0 (2026-09-30): select official standalone Unity CLI installation with separate user licensing; Hub is optional.
 - 2.2.2 (2026-09-30): link the independent product-release numbering policy; N acceptance scope is unchanged.
 - 2.2.1 (2026-09-30): describe the selected Steam/external integration path directly.
-- 2.2.0 (2026-09-30): limit initial accounts to guided onboarding and select external-only N2 tools; record deferred VRChat account experiments.
 
 Earlier entries remain in Git history.

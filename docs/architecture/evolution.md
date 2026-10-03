@@ -1,6 +1,6 @@
 # N-sequence architecture evolution
 
-> Document version: 1.5.0
+> Document version: 1.5.1
 > Status: Accepted
 > Updated: 2026-10-03
 > Scope: Incremental software and documentation structure for N1-N7
@@ -18,6 +18,9 @@ is the current delivery slice. Package the existing desktop and supervised Provi
 then complete desktop play, PICO USB, PICO Wi-Fi, and targeted recovery/guidance. Retain creator
 and other-device code for subsequent delivery. Use one packaging layout for ZIP now and NSIS
 later; packaged processes resolve bundled resources instead of a developer checkout.
+
+The [network onboarding architecture](network-onboarding.md) details the first-play HTTPS
+checks, mainland-only UU recommendation, correctable region and cross-region latency guidance.
 
 This design distinguishes a logical responsibility from a crate, process, or user-facing page.
 A new capability normally starts as a small module in an existing owner. Extract a crate only
@@ -186,6 +189,8 @@ responsibilities while reorganizing docs. This direction is accepted. Illustrati
 installer choices above are not frozen interfaces; define them from the first executable N1 slice.
 
 ## Document changelog
+
+- 1.5.1 (2026-10-03): route the implemented network slice to its owning architecture.
 
 - 1.5.0 (2026-10-03): prioritize packaged desktop/PICO play and retain creator work as subsequent delivery.
 - 1.4.0 (2026-10-02): route model-first play, observable silent installation and account/network

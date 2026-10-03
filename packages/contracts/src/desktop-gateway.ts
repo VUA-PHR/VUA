@@ -1,4 +1,5 @@
 import { isDeploymentCommandId, isDeploymentParams, type DeploymentPlanParams, type DeploymentExecuteParams } from "./environment-deployment.js";
+import { isNetworkParams, type NetworkIntent } from "./environment-network.js";
 import type {
   AppErrorV01,
   ApplicationEventV01,
@@ -902,6 +903,7 @@ export interface GatewayDeploymentPlanRequest { readonly schemaVersion: 1; reado
 export interface GatewayDeploymentExecuteRequest { readonly schemaVersion: 1; readonly requestId: string; readonly method: "environment.executeDeployment"; readonly params: DeploymentExecuteParams & { readonly commandId: string } }
 
 export type DesktopGatewayRequestV1 =
+  | { readonly schemaVersion: 1; readonly requestId: string; readonly method: "environment.checkNetwork"; readonly params: { readonly intent: NetworkIntent } }
   | GatewayDeploymentPlanRequest
   | GatewayDeploymentExecuteRequest
   | AppSnapshotRequestV1
@@ -980,6 +982,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "task.get": "query",
   "task.requestCancellation": "command",
   "environment.getSnapshot": "query",
+  "environment.checkNetwork": "query",
   "environment.planDeployment": "query",
   "environment.executeDeployment": "command",
   "environment.verifyEditor": "query",
@@ -1529,6 +1532,8 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
     case "environment.getSnapshot":
     case "overlay.getSnapshot":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
+    case "environment.checkNetwork":
+      return hasExactKeys(value, REQUEST_KEYS) && isNetworkParams(value.params);
     case "environment.planDeployment":
       return hasExactKeys(value, REQUEST_KEYS) && isDeploymentParams(value.params, false);
     case "environment.executeDeployment": {

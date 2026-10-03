@@ -1,6 +1,6 @@
 # N1 delivery plan: from a device choice to a working environment
 
-> Document version: 1.3.0
+> Document version: 1.4.0
 > Status: Accepted
 > Updated: 2026-10-03
 > Scope: First play release, followed by the wider N1 device/creator routes
@@ -122,13 +122,27 @@ fees and user actions. Independent installation work can continue while an accou
 
 ### Regional connectivity belongs to N1
 
-Offer mainland-China guidance such as NetEase UU, with existing-service and skip options.
+The first accelerator recommendation is only [NetEase UU](https://uu.163.com/), with
+existing-service and skip options. Tell users to select VRChat in UU; per the author's
+2026-10-03 practical guidance, this also accelerates the surrounding Steam and Oculus stores.
 Disclose that VUA has no financial relationship with the suggested provider; the provider
 operates and charges for its service independently.
 
 Region is a default recommendation hint which the user can correct. Inspect the actual target
 service: Steam, Meta, VRChat and Unity may follow different network routes. Distinguish local
 computer/headset connectivity from Internet access before recommending a remedy.
+
+The [network implementation](../architecture/network-onboarding.md) provides an explicit
+four-target desktop/five-target PICO HTTPS check, correctable region hint, per-service results,
+UU guidance, continue/recheck actions and four-language UI. Recommendations depend on usage
+region, independently of UI language; outside mainland China and unknown regions do not
+recommend UU. Cross-region instance latency has a separate guide for instance-region/ping
+checks and distinguishing FPS/streaming issues. Its
+[Candidate query](../protocols/environment-network-v0.1.md) is separate from legacy TCP facts.
+Acceptance for this slice: a mixed-success run preserves each result, manual region overrides
+the hint, only PICO mode checks the PICO entrance, retry replaces old results, and neither
+timeout nor unknown region blocks software setup. Verify actual game login/loading later in
+the first-play path; website response time is not the game latency measurement.
 
 ## Unity: first working creator environment
 
@@ -227,9 +241,12 @@ combined Cargo dependency graph and inspect the lockfile rather than taking one 
 - [PS VR2 PC preparation](https://www.playstation.com/en-us/support/hardware/pc-prepare-ps-vr2/).
 - [Microsoft WMR](https://learn.microsoft.com/en-us/windows/mixed-reality/enthusiast-guide/mixed-reality-software)
   and [Oasis](https://store.steampowered.com/app/3824490/Oasis_Driver_for_Windows_Mixed_Reality/).
-- [NetEase UU](https://uu.163.com/console/) and [third-party Meta Helper](https://ochelper.xlemon.cn/home.html).
+- [NetEase UU](https://uu.163.com/). Future Quest activation research (outside the first play
+  release): [third-party Meta Helper](https://ochelper.xlemon.cn/home.html).
 
 ## Document changelog
+
+- 1.4.0 (2026-10-03): specify the implemented network slice, UU-only recommendation and per-service acceptance.
 
 - 1.3.0 (2026-10-03): prioritize standalone ZIP, desktop play, PICO USB/Wi-Fi and release recovery/guidance; retain creator and other-device work after the first play release.
 - 1.2.0 (2026-10-02): prioritize CLI-led official acquisition and actual-version inspection; keep the mirror as an optional backup.
