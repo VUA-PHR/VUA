@@ -12,6 +12,71 @@ import type { Strings } from "./strings.en.ts";
  *   仅 gateway fixture 可达,生产构建被 Tree-shaking 剔除)。
  */
 export const strings: Strings = {
+  network: {
+    lagTitle: "能进入游戏，但远方房间很卡？",
+    lagRegion: "先在 VRChat 内查看房间实例的服务器地区，对比一个更接近用户和同伴所在地的实例，并查看游戏内的延迟。网页检测正常不代表跨地区房间的延迟低。",
+    lagPerformance: "如果表现为画面卡顿，还要对比游戏帧率。使用 PICO 串流时，再单独检查 PICO Connect 的 USB 或局域网 Wi-Fi 连接；这些与房间服务器的互联网延迟是不同的问题。",
+    regionUse: "网络使用地区",
+    uuQualifier: "此推荐适用于在中国大陆连接网络的用户。",
+    "title": "检查游玩网络",
+    "description": "安装前分项检查 Steam 和 VRChat 的服务入口，再根据结果处理连接问题。",
+    "options": "检测选项",
+    "route": "游玩方式",
+    "routes": {
+      "desktop_play": "桌面游玩",
+      "pico_pcvr": "PICO 串流"
+    },
+    "region": "网络地区",
+    "autoRegion": "自动识别",
+    "regions": {
+      "china_mainland": "中国大陆",
+      "other": "中国大陆以外",
+      "unknown": "未能识别"
+    },
+    "privacy": "检测会访问下列服务，不登录账号。自动识别地区还会访问 Cloudflare，仅使用国家分类，不保存 IP 地址。",
+    "check": "检测网络",
+    "recheck": "重新检测",
+    "continue": "继续安装",
+    "continued": "可以继续下方的软件安装，随时展开网络检测。",
+    "reopen": "展开网络检测",
+    "running": "正在检查各服务入口… 已用 {seconds} 秒，每项检测均设有超时。",
+    "failed": "本次检测未能完成。可以重试，也可以继续安装，在游戏中验证连接。",
+    "summary": "{total} 个服务入口中，{count} 个响应正常。",
+    "checkedAt": "检测时间：{time}",
+    "regionHint": "此结果反映网络出口；如果与当前配置的网络地区不同，可以手动修改。",
+    "targets": {
+      "steam_store": "Steam 注册与商店",
+      "steam_community": "Steam 社区",
+      "steam_download": "Steam 安装包下载",
+      "vrchat_web": "VRChat 网页",
+      "pico_connect": "PICO Connect 下载页"
+    },
+    "statuses": {
+      "reachable": "响应正常",
+      "http_error": "已收到服务器响应，需进一步查看",
+      "redirected": "需要在浏览器确认跳转",
+      "timeout": "连接超时",
+      "connection_failed": "未能建立连接",
+      "probe_error": "检测暂不可用"
+    },
+    "responseTime": "收到响应头用时 {milliseconds} 毫秒",
+    "remedies": {
+      "http_error": "打开官方页面查看。访问限制、浏览器验证或服务异常都可能影响自动检测，此结果不代表整个网络断开。",
+      "redirected": "打开官方页面，在浏览器中完成跳转；网络调整后可重新检测。",
+      "timeout": "确认互联网连接后重试，也可以打开官方页面，对比浏览器是否能连接。",
+      "connection_failed": "先确认官方页面能否打开，必要时检查系统时间、当前代理或加速器，再重新检测。",
+      "probe_error": "请重试检测，期间可以继续安装软件。"
+    },
+    "openService": "打开官方页面",
+    "uuTitle": "中国大陆网络：网易 UU",
+    "uuSteps": "打开网易 UU，选择加速 VRChat，即可同时加速周边的 Steam 商店和 Oculus 商店，无需分别选择。完成后回到这里重新检测。",
+    "uuAffiliation": "VUA 与网易 UU 没有利益关系，服务由网易独立运营，使用条款及费用以其说明为准。",
+    "openUu": "打开网易 UU",
+    "uuRecheck": "已有的加速器可以继续使用。VUA 的检测请求与游戏可能采用不同线路，启用加速后还应在 VRChat 内验证登录和加载。",
+    "scope": "这里检测服务入口的可达性，不测量游戏延迟或下载速度。无论结果如何，都可以继续安装，并在游玩时验证游戏连接。",
+    "picoLocal": "PICO 的 USB 和 Wi-Fi 串流连接在 PICO Connect 中单独检查。互联网正常但头显无法连接时，请在那里检查线缆或局域网连接。",
+    "linkFailed": "页面未能打开，请重试。"
+  },
   /** 术语本地注释(键必须与 terms.ts 的 TERMS 一一对应;空串 = 无注释,仅显示术语) */
   terms: {
     warehouse: "仓储",
@@ -327,14 +392,20 @@ demoTaskTitle: "演示任务",
     confirm: "进入 VUA",
   },
   deployment: {
+    editorEditionOrder: "优先全球版 2022.3.22f1，失败后尝试中国版 2022.3.22f1c1；两者均失败后使用 Unity Hub。",
+    phases: { started: "正在开始", resolving_source: "正在获取下载地址", downloading: "正在下载", verifying: "正在校验文件", installing: "正在安装", inspecting: "正在检查安装结果", registering: "正在注册编辑器", source_failed: "此下载来源失败", installation_failed: "此次安装失败", cache_rejected: "正在重新获取无效的缓存文件", verified: "已验证此项前置条件" },
+    transferred: "已处理数据",
+    elapsed: "已用时间",
+    installingHint: "安装程序正在后台运行，VUA 会等待并检查安装结果。Windows 可能弹出权限提示；取消请求将在本次安装步骤结束后生效。",
+    sourceFailures: "查看各次下载和安装详情",
     mirrorHeading: "Unity 下载来源",
     mirrorLabel: "允许使用镜像站",
-    mirrorHint: "大陆优先 NoUnityCN，其他地区优先官方。失败后尝试另一来源，再转 Unity Hub。关闭后只使用官方来源和 Hub。",
+    mirrorHint: "所有地区均优先使用 Unity 官方下载，下载后识别实际为全球版 f1 或中国版 c1。开启后，官方下载失败时可尝试 NoUnityCN 备用来源。",
     downloadRegion: "下载出口地区",
     downloadOrder: "下载顺序",
     downloadRegions: { china_mainland: "中国大陆", other: "中国大陆以外", unknown: "尚未确定" },
     downloadSources: { official: "Unity 官方", nounitycn: "NoUnityCN" },
-    hubFallback: "下载来源均未成功，使用 Unity Hub 安装 Unity 2022.3.22f1。",
+    hubFallback: "全球版和中国版自动部署均失败，请通过 Unity Hub 继续安装。",
     openHub: "在 Unity Hub 中安装此版本",
     getHub: "下载 Unity Hub",
     "title": "按用途部署环境",

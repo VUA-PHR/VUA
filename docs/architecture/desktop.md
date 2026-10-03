@@ -1,11 +1,11 @@
 # Electron desktop and presentation architecture
 
 
-> Document version: 1.4.1
+> Document version: 1.6.0
 > Status: Accepted
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
-> Updated: 2026-10-02
-> Last conformance review: 2026-10-02 (source/layout review, not runtime acceptance)
+> Updated: 2026-10-03
+> Last conformance review: 2026-10-03 (packaged runtime/layout review; play acceptance remains separate)
 > Normative effect: Yes
 
 ## Technology decision
@@ -56,8 +56,10 @@ correlation, post-download inspection, and Warehouse/BDL decisions.
 
 ## Account-guide browser
 
-The first account slice opens official Steam/VRChat registration pages and optional Unity/BOOTH
-pages in the existing isolated built-in browser. Reuse security enforcement; do not create an
+The account guide opens official Steam/VRChat registration pages and optional Unity/BOOTH pages,
+plus manufacturer, headset-store, streaming or accelerator pages required by the selected route.
+Use the existing isolated built-in browser, with phone/headset/native-client handoff and saved
+guide progress where needed. Reuse security enforcement; do not create an
 Auth Broker service. Separate temporary account-guide partitions from AMF's BOOTH acquisition
 profile and from one another except for required in-flow identity-provider navigation. Do not
 persist these guide partitions; dispose/clear them when the guide session ends. Do not scrape
@@ -75,6 +77,17 @@ The product boundary records later web-reading and experimental persistence inte
 enabled by this first slice. Any future persisted profile needs explicit consent, local browser
 storage and tested clearing/logout semantics, without secrets in application or Agent data paths.
 This is intended architecture, not evidence that existing browser code already meets these cases.
+
+## Deployment presentation
+
+The [N1 delivery plan](../development/n1-delivery-plan.md) starts headset selection with brand and
+model. The backend resolves official route requirements. Present cable/wireless questions only
+where they affect the selected model, and keep optional alternative streaming choices explicit.
+
+Silent installations retain a visible task. Render component, phase, real progress when exposed,
+elapsed time, observed activity and required interaction. A UI timer is not installer evidence.
+Extended inactivity exposes details and next actions. Reopening the page reads the existing task;
+application restart uses the existing inspect-required recovery behavior. All copy uses i18n.
 
 ## Remote content isolation
 
@@ -127,9 +140,34 @@ desktop statement, 2026-09-10).
 - Overlay only consumes stable snapshots and semantic actions and never becomes a business-logic
   host (AGENTS architecture constraints; the consumption split follows proposal 017; see the
   Overlay boundary section in integrations-and-overlays.md), and Overlay failures never block the
-  desktop mainline (standing delivery rule). The
-  Overlay read-face wire vocabulary lands with a future ordinary slice — no scheduled window; until then the rendered
-  surface shows an honest empty state and never fabricates a session.
+  desktop mainline (standing delivery rule). `overlay.getSnapshot` is wired through Gateway and
+  Provider to the production projection. The first-play guide must work independently of that
+  projection; reuse the existing static guide content and window without requiring an AMF task.
+  Headset access initially uses SteamVR's desktop view, with its own real-device acceptance.
+
+## Standalone Windows packaging
+
+`apps/desktop/electron-builder.yml` owns the Windows x64 ZIP layout. Compiled Main/preload/renderer
+and their bundled JavaScript dependencies live in `resources/app.asar`; the native Provider lives
+at `resources/provider/vua-orchestrator-provider.exe`. Electron and its Chromium assets travel
+with the app. Third-party game/streaming/Unity installers are not included in this ZIP.
+The packaging build statically links the Provider's C runtime; it does not require a separate
+Visual C++ runtime installation just to start VUA. Normal development builds remain unchanged.
+Main and preload are built separately so the sandboxed preload needs no shared JavaScript chunk.
+The archive excludes workspace sources, tests, development dependencies and the unused Mock Provider.
+
+Packaged startup resolves resources from Electron's `resourcesPath`, independently of the
+working directory or source checkout. Development-only Provider/renderer overrides are ignored
+in the package. Normal packaged app data lives in `%APPDATA%\VUA`, outside the extracted program;
+moving/replacing the program directory preserves it. The source launcher keeps its existing
+development profile. A later NSIS package must retain the same data location.
+
+The explicit `--vua-smoke-test=<absolute directory>` diagnostic uses an isolated profile and a
+hidden window. It mounts the compiled renderer, sends read-only queries through the real preload
+and Gateway to the bundled Provider, checks persistence and writes a local report before exiting.
+The packaging harness extracts the actual ZIP outside the checkout, removes developer tools from
+PATH, tests a moved directory and tests a missing backend. It does not install or launch games.
+Commands and artifact paths are in the [desktop development entry](../../apps/desktop/README.md#windows-zip-preview).
 
 ## React and release boundaries
 
@@ -143,11 +181,18 @@ promoted only after real-page validation.
 
 Electron, Chromium, Node.js, packaging, the selected Orchestrator Provider, and native dependencies
 are version-locked. The independent supervised Provider executable is packaged and verified for the
-supported Windows architecture according to the accepted hosting decision. Releases require
-dependency/license review, Electron security checks, remote-permission tests, signing, and update
-rollback validation. The redistribution review authorizes each bundled binary.
+supported Windows architecture according to the accepted hosting decision. The
+[first-play release](../development-outline.md#first-play-release-acceptance) brings forward the
+ZIP, dependency/license review, applicable security checks and illustrated guidance. Local previews
+record that they are unsigned; signing preparation runs alongside development. Full installer,
+automatic updater and update-rollback validation follow under broader N7 acceptance. The
+redistribution review authorizes each bundled binary before a public release.
 
 ## Document changelog
+
+- 1.6.0 (2026-10-03): define standalone ZIP resources/data, the real packaged bootstrap check and the first-play overlay/release subset.
+- 1.5.0 (2026-10-02): describe model-first deployment, silent-install activity and device/service
+  account handoffs using existing isolated browser and task surfaces.
 
 - 1.4.1 (2026-10-02): merge the N1 Unity Hub handoff protocol with the status-quo alignment;
   no rule change.
