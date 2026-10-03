@@ -1,11 +1,11 @@
 # Core, plugin, external integration, and overlay architecture
 
 
-> Document version: 1.2.1
+> Document version: 1.3.0
 > Status: Accepted
 > Scope: Environment deployment, project management, integrated runtimes, plugin host, desktop/VR overlays
-> Updated: 2026-09-30
-> Last conformance review: 2026-09-06
+> Updated: 2026-10-03
+> Last conformance review: 2026-10-03 (overlay source review; headset usability pending)
 > Normative effect: Yes
 
 ## Trust classes
@@ -111,11 +111,13 @@ described as complete compatibility; unsafe writes become read-only, conversion 
 Desktop and VR overlays consume the same versioned display snapshot and return semantic actions.
 The application core owns task and business state.
 
-> Current scope (2026-09-28): the desktop overlay remains a supported host surface. The VR
-> overlay is unscheduled outside the current N acceptance set. The design below constrains
-> future work; it does not create a v1.0.0 milestone or add another N2 tool.
+The first play release includes the lightweight desktop guide overlay. Reuse the existing
+window and guide content, add the relevant current-step entry, and keep guidance independent
+of AMF availability. Validate reading/operating it through SteamVR's desktop view on PICO.
+This is desktop-view guidance; a native VR overlay remains subsequent work. The design below
+constrains that later implementation and does not add another N2 tool.
 
-The first VR path is a separately built, explicitly started
+The first native VR overlay path, after the first play release, is a separately built, explicitly started
 SteamVR Dashboard helper using public `IVROverlay`. It receives display snapshots and returns actions
 such as `next`, `back`, `dismiss`, and `open_on_desktop`; receives no assets, projects, credentials, or
 general file capability; and uses bounded messages, version handshake, current-user restriction, and
@@ -127,6 +129,7 @@ untrusted and cannot authorize local mutation.
 
 ## Document changelog
 
+- 1.3.0 (2026-10-03): include lightweight desktop guidance and headset desktop-view validation in the first play release; retain native VR overlay as later work.
 - 1.2.1 (2026-09-30): state Steam library/install guidance and external invocation directly.
 
 - 1.2.0 (2026-09-30): define thin N2 external connectors and upstream-owned lifecycle.

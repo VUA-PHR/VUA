@@ -1,13 +1,13 @@
 # N1 delivery plan: from a device choice to a working environment
 
-> Document version: 1.2.0
+> Document version: 1.3.0
 > Status: Accepted
-> Updated: 2026-10-02
-> Scope: Implementation of the user's September 30–October 2 N1 rulings
+> Updated: 2026-10-03
+> Scope: First play release, followed by the wider N1 device/creator routes
 
-For people: choose what to do and which headset to use. VUA prepares the required software,
-connections and account/device guidance until play or local Avatar editing works. Existing
-installations are reused, and the player can add another purpose later.
+For people: the first release prepares desktop VRChat play or PICO Connect streaming, including
+accounts, network advice and basic play guidance. Existing installations are reused. Other
+headsets and Avatar editing follow in later releases.
 
 For Agents: implement the first unfinished usable path, run it, fix the observed failure and
 repeat that same path. Work in one feature checkout. The [product boundary](../product-boundary.md#n1-device-and-network-onboarding)
@@ -15,6 +15,10 @@ owns scope; the [N1 acceptance rows](../development-outline.md#n1-purpose-driven
 own completion. This plan organizes delivery without replacing contracts or the N5 plan.
 
 ## Intended experience
+
+For the first play release, follow the [accepted scope](../product-boundary.md#first-play-release-user-ruling-2026-10-03)
+and [observable acceptance](../development-outline.md#first-play-release-acceptance).
+The broader experience below remains the expansion direction; it is not a first-release checklist.
 
 1. Choose desktop play, headset play, PC Avatar editing or Quest Avatar editing; allow combinations.
 2. For headset play, select **brand, then exact model**. Offer detected devices as suggestions,
@@ -35,9 +39,9 @@ explains the next action; detailed technical diagnostics are expandable.
 
 ## Devices and official-first routes
 
-The first device pool is Meta Quest, Oculus Rift S, PICO, HTC VIVE, Valve Index and Sony PS VR2.
-WMR is an investigation candidate whose first-delivery inclusion follows the cost assessment
-below. Bigscreen and Varjo follow the first pool. Steam hardware share informs priority.
+First-release device work is PICO Connect with PICO 4 Pro over USB and Wi-Fi. The subsequent
+device pool is Meta Quest, Oculus Rift S, PICO, HTC VIVE, Valve Index and Sony PS VR2.
+WMR remains a later investigation candidate. Bigscreen and Varjo follow that pool.
 
 Deliver **one complete recommended route per supported model first**, preferentially the
 manufacturer's official route. Reuse adapters across models with matching requirements while
@@ -89,6 +93,10 @@ side effects. Keep capability-specific cancellation and retry behavior in the ow
 
 ### Accounts follow the selected route
 
+Start the play release with Steam registration/login and VRChat's Steam login route; full VRChat
+account registration/linking is optional. Add PICO's official account/device handoffs where needed.
+The creator/other-manufacturer directions below apply when those later routes are delivered.
+
 Steam and VRChat serve play; Unity and BOOTH/pixiv are optional creator steps. Add manufacturer,
 headset-store, streaming or accelerator account guidance when the selected route needs it.
 Reuse the existing isolated temporary browser and official destinations. Keep registration,
@@ -100,6 +108,8 @@ result was observed or user-reported. Passwords and authentication state do not 
 Users complete account submissions, CAPTCHA, purchases, agreements and license selection.
 
 ### Quest activation in mainland China
+
+This investigation follows the first play release and does not block its PICO route.
 
 Target activation without requiring the player to configure a general-purpose VPN. Evaluate
 dedicated acceleration/activation services and their hotspot or gateway instructions. The real
@@ -122,6 +132,9 @@ computer/headset connectivity from Internet access before recommending a remedy.
 
 ## Unity: first working creator environment
 
+Continue this retained implementation after the first play release; Unity installation, licensing,
+SDK/MA project preparation and Android modules are not play-release prerequisites.
+
 The [Unity deployment architecture](../architecture/unity-deployment.md) owns acquisition and
 installation. Use Unity CLI release lookup and the official download route first in every region.
 Identify the actual payload as global `2022.3.22f1` or China `2022.3.22f1c1`; the global entry can
@@ -135,7 +148,7 @@ lookup, received bytes, file identity, installer exit, Editor inspection and reg
 separately. Inspect the actual accepted Editor version and retain a valid cache; CLI registration
 can normalize c1 to f1, so it is not the authority for the observed version.
 
-First local completion path:
+Subsequent creator completion path:
 
 > Select PC Avatar editing -> reuse the existing play environment -> obtain the global
 > `2022.3.22f1` installer (China `2022.3.22f1c1` fallback) -> install at the confirmed destination -> inspect/register the Editor ->
@@ -149,29 +162,49 @@ the PC path works. Existing external-manager projects retain their read-only/cop
 
 | Order | Concrete deliverable | First check |
 | --- | --- | --- |
-| 1 | Complete CLI-led official acquisition, actual-edition checks and long-task activity | Obtain the official payload, identify f1/c1 and exercise the product installer path |
-| 2 | Complete Editor registration, license handoff and SDK/MA preparation | Open/compile the real project; a repeated plan reuses the installation |
-| 3 | Brand/model selection and one official play route at a time | Selected model produces actual prerequisites, then reaches game launch and device verification |
-| 4 | Add account, activation and connectivity steps where the route needs them | Complete phone/headset/client handoffs and resume an interrupted guide |
-| 5 | Component additions, maintenance and alternative streaming choices | Keep working components, change only selected items and verify the result |
+| 1 | Self-contained Windows x64 ZIP, packaged Provider paths and runtime smoke | Extract outside the checkout, load the real renderer and query the real bundled Provider with isolated test data |
+| 2 | Desktop play: relevant inspection, network advice, Steam account guide and Steam/VRChat install/launch | Complete the absent-software route into desktop play; reuse existing accounts/installations |
+| 3 | PICO Connect USB path and desktop guidance overlay | Install only the additional VR prerequisites, connect the headset and complete the USB/headset-guide acceptance rows |
+| 4 | PICO Connect Wi-Fi path | Complete wireless play and a disconnect/reconnect, with useful local-network diagnostics |
+| 5 | Recovery, four-language UI review, screenshots and release preparation | Exercise repeated runs/interruption, produce notices and instructions, and record the release acceptance rows |
+| Later | Creator installation/project work, other devices, N2 tools and broader N6/N7 | Follow their unchanged owning acceptance rows after the first play release |
+
+Prepare exact-build dependency/license inventory and SignPath application requirements alongside
+these slices. Use GitHub-hosted Windows builds for the future signing path. ZIP previews are
+explicitly unsigned until signing is configured. Do not publish an artifact merely because it
+passes the bootstrap smoke: the remaining play acceptance rows still apply.
+
+Implementation checkpoint, 2026-10-03: the Windows ZIP bootstrap slice now builds the compiled
+desktop plus the real Provider, keeps user data outside the program directory and excludes
+workspace tests/mocks. The Provider uses a statically linked C runtime. Local ZIP checks passed
+for fresh launch in a Unicode/space path, moving/restarting with the same isolated profile, and
+explicit failure when the bundled backend is missing. Source changes passed 967 desktop tests,
+type/i18n/boundary checks and production fixture scanning. The reusable commands and generated
+report location are in the [desktop entry](../../apps/desktop/README.md#windows-zip-preview);
+the dated raw run is local at `_local_real_machine/n1-play-zip-2026-10-03.md`.
+This checkpoint exercises bootstrap, not software installation or physical-headset acceptance.
+The next slice is the desktop play row above; PICO USB/Wi-Fi and guide UI remain subsequent slices.
+
+The desktop overlay reuses the existing guide and window. Add a current-step entry and usable
+hide/return actions, keeping guide content independent of production state. Test SteamVR desktop
+view as the first headset access route; a new OpenVR overlay host follows this release.
 
 These are delivery slices, not new release gates. Account/network work moves forward when it
 becomes the first blocker in a selected route. Retain the legacy `pico_pcvr` wire value while
 introducing a typed brand/model intent with its contract, Rust, TypeScript and consumer checks.
 UI wording changes do not silently rename a serialized enum.
 
-## WMR investigation and first-delivery decision
+## WMR investigation after the first play release
 
 Source review on 2026-10-02 found two routes: Microsoft's legacy stack on older Windows, and
 Oasis on newer Windows 11 with its documented GPU requirements. Further investigation must
 identify exact setup/unlock steps, existing discovery code to reuse, required privileges and a
 repeatable headset/controller check using available hardware.
 
-Estimate adapter and validation work after that review. If a large separate driver/recovery
-effort is needed, record WMR as deferred for first delivery under the user's explicit permission.
-Its status stays visible and the other routes continue. Prefer the upstream installation and
-guide over writing a WMR driver in VUA. The current source review identifies a candidate route;
-the implementation-cost decision remains pending.
+The first play release supports desktop/PICO; WMR investigation resumes during device expansion.
+Estimate adapter and validation work after that review. Prefer the upstream installation and guide
+over writing a WMR driver in VUA. The source review identifies a candidate route; its implementation
+and hardware acceptance remain later work.
 
 ## Integration with N5 development
 
@@ -198,6 +231,7 @@ combined Cargo dependency graph and inspect the lockfile rather than taking one 
 
 ## Document changelog
 
+- 1.3.0 (2026-10-03): prioritize standalone ZIP, desktop play, PICO USB/Wi-Fi and release recovery/guidance; retain creator and other-device work after the first play release.
 - 1.2.0 (2026-10-02): prioritize CLI-led official acquisition and actual-version inspection; keep the mirror as an optional backup.
 - 1.1.0 (2026-10-02): apply the accepted development f1/c1 pair and global → China → Hub installation order.
 

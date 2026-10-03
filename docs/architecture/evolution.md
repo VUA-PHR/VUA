@@ -1,8 +1,8 @@
 # N-sequence architecture evolution
 
-> Document version: 1.4.0
+> Document version: 1.5.0
 > Status: Accepted
-> Updated: 2026-10-02
+> Updated: 2026-10-03
 > Scope: Incremental software and documentation structure for N1-N7
 > Normative effect: Accepted incremental direction; existing wire/storage contracts remain authoritative
 
@@ -11,7 +11,13 @@
 Keep Electron/React, the supervised Rust Provider, SQLite task persistence, and Unity Bridge.
 Organize new work around user use cases inside the existing six-crate workspace. Start with the
 N1 deployment path; do not make a repository-wide rewrite, new plugin framework, new transport,
-or full environment version manager a prerequisite for installing Unity on the current machine.
+or full environment version manager a prerequisite for the first desktop/PICO play release.
+
+The [first play release acceptance](../development-outline.md#first-play-release-acceptance)
+is the current delivery slice. Package the existing desktop and supervised Provider first;
+then complete desktop play, PICO USB, PICO Wi-Fi, and targeted recovery/guidance. Retain creator
+and other-device code for subsequent delivery. Use one packaging layout for ZIP now and NSIS
+later; packaged processes resolve bundled resources instead of a developer checkout.
 
 This design distinguishes a logical responsibility from a crate, process, or user-facing page.
 A new capability normally starts as a small module in an existing owner. Extract a crate only
@@ -42,10 +48,10 @@ when a measured dependency, build, packaging, or independent lifecycle problem j
 6. Each completed step is followed by an appropriate observation or functional check.
 7. Failures retain the failed step and next action. Restart uses the existing inspect-required path.
 
-The first executable path is the current machine's existing play environment to a working Unity
-2022.3.22f1 project with real SDK/MA. Purpose plans for other declared N1 targets follow the same
-pattern once their prerequisites are available. Successful installation is not inferred from an
-installer process starting or exiting alone.
+The current executable path is desktop play, followed by PICO Connect USB and Wi-Fi play.
+The existing Unity installation/project work remains available for the subsequent creator path.
+Purpose plans for other N1 targets follow the same pattern. Successful installation is not
+inferred from an installer process starting or exiting alone.
 
 ### Account guidance alongside deployment
 
@@ -181,6 +187,7 @@ installer choices above are not frozen interfaces; define them from the first ex
 
 ## Document changelog
 
+- 1.5.0 (2026-10-03): prioritize packaged desktop/PICO play and retain creator work as subsequent delivery.
 - 1.4.0 (2026-10-02): route model-first play, observable silent installation and account/network
   guidance through existing owners; align the current Unity installer/source policy.
 

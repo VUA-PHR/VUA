@@ -1,10 +1,10 @@
 # VUA product boundary
 
 
-> Document version: 2.7.0
+> Document version: 2.8.0
 > Status: Accepted
 > Scope: Entire VUA product
-> Updated: 2026-10-02
+> Updated: 2026-10-03
 > Normative effect: Yes
 
 ## Product definition
@@ -212,10 +212,48 @@ gate derives risk from declared capabilities and behavior.
 
 ## N1 device and network onboarding
 
-User rulings of 2026-10-02 expand N1 from the original PICO example to brand/model-driven play
-preparation. The first device pool covers Meta Quest, Oculus Rift S, PICO, HTC VIVE, Valve Index
+### First play release (user ruling, 2026-10-03)
+
+The first play release takes a Windows user from missing play software to desktop VRChat play
+or PICO Connect streaming. It delivers the following bounded scope:
+
+- Inspect the relevant Internet services and download sources; distinguish these failures from
+  local PC/headset connectivity. Explain useful remedies and recheck after the user's action.
+  Mainland-China guidance may suggest an accelerator such as NetEase UU, with the existing
+  no-financial-relationship disclosure. Region is a correctable hint, not a connectivity verdict.
+- Guide Steam registration, verification and client login. Existing accounts skip registration.
+  Explain VRChat's first login with Steam; a full VRChat account and account linking remain
+  optional guidance. Hand off PICO account/device confirmations when its official flow needs them.
+- Detect and install Steam and VRChat for desktop play. Only the VR route additionally requires
+  SteamVR, PICO Connect and the necessary components supplied by their official installers.
+  Inspect Windows, disk space and graphics/driver readiness, with specific remediation guidance.
+- Guide launch, connection, basic controls, audio/microphone setup and the next play session.
+  Prefer supported silent installation with visible progress and explicit user handoffs.
+  Reuse installed software and recover interrupted work through inspection and explicit retry.
+- Include the existing lightweight desktop guidance overlay: current instructions, illustrations,
+  basic controls, hide/close and return to the main app. Guidance works independently of AMF.
+  Test reading that guidance through SteamVR's desktop view on the headset. A dedicated native
+  VR overlay is later work, not a requirement for this release.
+
+PICO 4 Pro with both USB and Wi-Fi is the first hardware acceptance target. Record actual
+PICO OS, PICO Connect, SteamVR and game versions at test time. PICO precedes Quest so this
+release does not depend on resolving Quest's initial activation path. Other brands, alternative
+streaming tools, creator accounts, Unity/AMF and the N2 tools follow in later deliveries.
+Existing code and the wider N-stage scope are retained; this release does not close all of N1.
+
+Distribute a self-contained Windows x64 ZIP first. Advance the shared N7 packaging work and
+the relevant illustrated guide; NSIS, automatic updating and the rest of N7 follow separately.
+Prepare exact-build third-party notices and SignPath Foundation application/integration alongside
+development. Local unsigned previews are explicitly labeled; public signing status and remaining
+limitations are recorded at publication. No certificate application blocks implementation.
+Acceptance belongs to [the first play release rows](development-outline.md#first-play-release-acceptance).
+
+### Subsequent device expansion
+
+The device pool from the 2026-10-02 ruling remains the subsequent expansion direction after
+the first play release. It covers Meta Quest, Oculus Rift S, PICO, HTC VIVE, Valve Index
 and Sony PS VR2. Investigate Windows Mixed Reality's installation and validation cost before
-committing it to first delivery; substantial work may be deferred under the user's permission.
+committing it to a delivery; substantial work may be deferred under the user's permission.
 Bigscreen and Varjo follow the initial pool. Deliver one complete route per supported model
 first, preferentially the official manufacturer route, then add alternative streaming choices.
 
@@ -257,7 +295,8 @@ this does not widen first-delivery account storage or authentication automation.
 
 ## Account onboarding (user ruling, 2026-09-30)
 
-The first usable delivery guides people through official pages in the built-in browser, with
+The first play release uses the subset defined above; creator account guidance follows with
+creator delivery. N1 account guidance uses official pages in the built-in browser, with
 client, phone-app or headset handoffs where required. The base scope is Steam and VRChat for play,
 with optional Unity and BOOTH/pixiv registration guidance for the creator route. Add manufacturer,
 headset-store, streaming and accelerator account guidance when the selected device route requires
@@ -439,6 +478,7 @@ plugin execution and a marketplace still require their separately accepted secur
 
 ## Document changelog
 
+- 2.8.0 (2026-10-03): bound the first play release to desktop/PICO onboarding, a desktop guide overlay and ZIP distribution; retain wider N1 work for later deliveries.
 - 2.7.0 (2026-10-02): make CLI-led official acquisition first in every region and identify the actual downloaded edition; mirrors are optional backups.
 
 - 2.6.0 (2026-10-02): accept the f1/c1 development pair and global → China → Hub deployment order while retaining actual identities.
@@ -454,6 +494,5 @@ plugin execution and a marketplace still require their separately accepted secur
 - 2.2.2 (2026-09-30): link the independent product-release numbering policy; N acceptance scope is unchanged.
 - 2.2.1 (2026-09-30): describe the selected Steam/external integration path directly.
 - 2.2.0 (2026-09-30): limit initial accounts to guided onboarding and select external-only N2 tools; record deferred VRChat account experiments.
-- 2.1.0 (2026-09-29): consolidate user-requested VRChat interaction, credential, account-operation and privacy boundaries.
 
 Earlier entries remain in Git history.

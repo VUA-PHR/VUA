@@ -1,4 +1,4 @@
-import { dialogStrings } from "./dialog-i18n.js";
+import { dialogStrings, startupFailureCopy } from "./dialog-i18n.js";
 import { app, BrowserWindow, dialog, ipcMain, net, session, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
@@ -44,8 +44,21 @@ import {
 import { checkLatestRelease } from "./update-check.js";
 import { SystemUsageCollector } from "./system-usage.js";
 import { createFsDirectory, listFsDirectory } from "./fs-directory.js";
+import { resolveDesktopRuntime } from "./runtime-paths.js";
+import { preparePackagedSmoke } from "./packaged-smoke.js";
 
-const rendererUrl = process.env.VUA_RENDERER_URL;
+const desktopRuntime = resolveDesktopRuntime({
+  isPackaged: app.isPackaged,
+  resourcesPath: process.resourcesPath,
+  mainDirectory: __dirname,
+  platform: process.platform,
+  env: process.env,
+});
+const rendererUrl = desktopRuntime.rendererUrl;
+// Keep distributed app data stable when the ZIP moves or a later installer replaces it.
+// The development profile stays separate; the smoke harness selects its own temporary profile.
+if (app.isPackaged) app.setPath("userData", path.join(app.getPath("appData"), "VUA"));
+const packagedSmoke = preparePackagedSmoke();
 let mainWindow: BrowserWindow | null = null;
 let overlayWindow: BrowserWindow | null = null;
 let provider: OrchestratorProviderV01 | null = null;
@@ -156,8 +169,8 @@ function broadcastRemoteContentEvent(rendererUrl: string | undefined, event: Rem
 
 /**
  * 受监督 Provider 端点解析(M2):
- * - 可执行文件:VUA_PROVIDER_EXECUTABLE 覆盖,否则取仓库构建产物
- *   (dist/electron 相对仓库根上溯四级);文件缺失即启动失败——
+ * - 可执行文件:分发包取 resources/provider;开发环境允许覆盖或取仓库构建产物。
+ *   文件缺失即启动失败——
  *   诚实失败优于静默回落 Mock;
  * - 任务库:用户数据目录,跨重启持久(重启恢复验收的权威来源);
  * - Provider 运行时根(用户实测缺口修复 2026-09-12):数据根=用户数据目录
@@ -182,21 +195,12 @@ function resolveProviderEndpoint(): {
    *  设置面如实标注(诚实纪律:不宣称即时生效) */
   unityEditorPath: string | null;
 } {
-  const platformSuffix = process.platform === "win32" ? ".exe" : "";
-  const executablePath = process.env.VUA_PROVIDER_EXECUTABLE
-    ?? path.join(
-      __dirname,
-      "..",
-      "..",
-      "..",
-      "..",
-      "target",
-      "release",
-      `vua-orchestrator-provider${platformSuffix}`,
-    );
-  if (!fs.existsSync(executablePath)) {
+  const executablePath = desktopRuntime.providerExecutable;
+  if (!fs.existsSync(executablePath) || !fs.statSync(executablePath).isFile()) {
     throw new Error(
-      `Provider executable is missing: ${executablePath} (build it with: cargo build --release -p vua-provider-host --bin vua-orchestrator-provider)`,
+      app.isPackaged
+        ? `The bundled VUA backend is missing. Extract the complete ZIP again: ${executablePath}`
+        : `Provider executable is missing: ${executablePath} (build it with: cargo build --release -p vua-provider-host --bin vua-orchestrator-provider)`,
     );
   }
   const userData = app.getPath("userData");
@@ -607,7 +611,7 @@ async function createWindow(): Promise<void> {
     openExternal: (url) => void shell.openExternal(url),
     confirmNavigation,
   });
-  mainWindow.once("ready-to-show", () => mainWindow?.show());
+  mainWindow.once("ready-to-show", () => { if (!packagedSmoke) mainWindow?.show(); });
 
   // 下载端口(F4-3/F4-4):will-download 接管 + 冻结词表事件规范化。事件汇
   // 按传输定案批量投递 download.ingest(at-least-once:回执裁剪缓冲 + BDL
@@ -719,9 +723,20 @@ app.whenReady().then(async () => {
   registerIpc(provider);
   systemUsage.start();
   await createWindow();
+  if (packagedSmoke && mainWindow) {
+    await packagedSmoke.verify(mainWindow, provider);
+    return;
+  }
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) void createWindow();
   });
+}).catch((error: unknown) => {
+  if (packagedSmoke) packagedSmoke.fail(error);
+  else {
+    console.error("[vua] desktop bootstrap failed:", error);
+    dialog.showErrorBox("VUA", startupFailureCopy(app.getLocale()));
+    app.quit();
+  }
 });
 
 app.on("window-all-closed", () => {

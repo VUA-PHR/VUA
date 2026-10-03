@@ -5,6 +5,16 @@ licenses; the repository's Apache-2.0 license does not replace them.
 
 ## Current source dependencies
 
+The desktop runtime uses Electron (MIT, with separate Chromium/Node notices), React/React DOM
+(MIT) and Three.js (MIT). Windows previews retain the runtime's shipped license files and VUA's
+license/notice summary. The lockfile pins their exact versions; a public build needs the complete
+transitive inventory under the distribution rule below.
+
+`electron-builder` 26.15.3 (MIT) is a build-only dependency owned by the desktop packaging scripts.
+It packages the compiled app and Provider into a Windows ZIP and does not run on user machines.
+It can be removed by replacing those scripts while preserving the standalone bootstrap checks.
+Its Squirrel.Windows helper build script is disabled because this project targets ZIP first.
+
 The current Rust workspace directly declares the following third-party crates:
 
 | Dependency | Declared license family | Role |

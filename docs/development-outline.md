@@ -1,9 +1,9 @@
 # VUA development sequence
 
-> Document version: 3.7.0
+> Document version: 3.8.0
 > Status: Accepted
-> Updated: 2026-10-02
-> Authority: User rulings of 2026-09-28 through 2026-10-02, including release decoupling and N1 device/network onboarding
+> Updated: 2026-10-03
+> Authority: User rulings of 2026-09-28 through 2026-10-03, including independent release numbering and the first play release
 > Scope: N1-N7, real-machine deployment and real-material workflows, continuing Beta
 > Normative effect: Schedules accepted product work; product scope belongs to product-boundary.md
 
@@ -45,7 +45,7 @@ See [versioning](release/versioning.md).
 
 | Gate | User task | Status |
 | --- | --- | --- |
-| N1 | Deploy the software and settings needed to play or edit Avatars | Active priority; acceptance pending |
+| N1 | Deploy the software and settings needed to play or edit Avatars | Desktop/PICO play subset first; broader acceptance pending |
 | N2 | Connect to upstream VRCFaceTracking and hyblocker Space Calibrator | Planned; exactly these two acceptance targets |
 | N3 | Produce a complex real-material Avatar and hand it to VRC SDK | Planned |
 | N4 | Save, share, and reproduce Recipes across real workflows | Planned |
@@ -106,6 +106,35 @@ harness is in vua-unity-bridge and can use synthetic inputs or a
 
 ## N1: purpose-driven deployment
 
+### First play release acceptance
+
+The first release prioritizes the [bounded play scope](product-boundary.md#first-play-release-user-ruling-2026-10-03).
+Keep N1-N7 identifiers and select a product version at publication. Release the play subset
+with the necessary N6 recovery and N7 distribution work; broader N1 and N7 remain open.
+The following rows, rather than the creator rows below, define this release's acceptance.
+
+| Case | Natural-language pass condition |
+| --- | --- |
+| Standalone ZIP | On the recorded Windows x64 test environment, extract the complete ZIP to a path containing spaces and non-ASCII characters and launch VUA without a source checkout, Node, pnpm or Rust. Its real packaged Provider responds, local assets load, and settings/task data remain outside the program directory. Moving/replacing the program directory preserves that data |
+| Relevant checks | Desktop play needs Steam and VRChat only; missing SteamVR, PICO or Unity does not block it. PICO streaming adds SteamVR and PICO Connect. Windows, graphics/driver, storage and software findings explain the next action instead of a generic failure |
+| Network | Report the affected official service/download source separately from local headset discovery. Show a relevant remedy and recheck after it. Existing network software can be retained; regional accelerator advice includes no-affiliation wording and a skip option |
+| Account guide | A new player reaches official Steam registration and client login; an existing player skips registration. Continue through VRChat first login with Steam and explain optional full-account/linking steps. PICO account/headset actions use official UI. Closing a page or encountering unsupported embedding leaves a resume or system-browser route |
+| Missing software | Starting with the selected software absent, obtain/install it through official sources and return to VUA for inspection. Prefer supported unattended steps; show installation phase/activity and required interaction. Steam-owned downloads are clearly handed to Steam and checked afterward |
+| Desktop play | Launch VRChat in desktop mode, enter the game, and follow the guide for movement, menus, sound, microphone and basic safety settings. Installed files alone do not pass this row |
+| PICO USB | With PICO 4 Pro, follow cable setup and the official connection flow, enter VRChat in the headset, and verify image, head/hand tracking, controller interaction, sound and microphone |
+| PICO Wi-Fi | Repeat the headset play checks over Wi-Fi; explain the local-network prerequisites, and exercise a disconnect/reconnect without repeating the whole installation |
+| Return/recovery | Repeat deployment without reinstalling satisfied components. Interrupt one download/install or user handoff, restart VUA, inspect the result and explicitly continue/retry. A later play session has a direct start path |
+| Desktop guide overlay | Open/hide/close the lightweight guide at any time, read instructions and illustrations for the relevant step, and return to the main app. Showing it does not steal focus; closing it does not cancel installation or stop a game. Guidance remains usable without AMF and is readable in all four initial locales |
+| Headset guide access | On the PICO test path, open SteamVR's desktop view, read/operate the desktop guide and return to play. Record this as desktop-view guidance, not a native VUA VR overlay |
+| Distribution | Include exact-build license notices, version/source identification, ZIP update/removal instructions, actual screenshots and known issues. Record signature status. Human UI review covers the guide and handoffs; remote build/smoke checks and physical headset tests retain their separate evidence |
+
+Use local uninstall/reinstall for the absent-software cases with the existing authorization and
+data-preservation rules. Record the baseline and actual software versions; this is not a factory
+reset or proof of all Windows versions. PICO device setup guidance is included; an already
+activated headset validates streaming, not a fresh-device activation claim.
+
+### Broader N1 acceptance after the first play release
+
 User task: choose what to do; VUA identifies missing prerequisites and helps install them.
 Deliver purpose-driven install/update/uninstall plus validation, repair/retry, component additions,
 version records, and limited configuration backup. Full-machine images, universal downgrade, and
@@ -123,7 +152,7 @@ a general environment version manager are not prerequisites.
 | Device route | For each supported model, complete one official-first installation/connection route, including required PC and headset software, pairing and game launch. Record the exact model and connection used; expand alternative streaming choices afterwards |
 | Network and activation | Guide regional service access and headset activation. Mainland-China suggestions include dedicated accelerators with a no-financial-relationship disclosure and an existing-service/skip choice. Check target-service reachability separately from LAN streaming; exercise headset update, phone login and pairing for the selected Quest activation route |
 
-First local path: keep existing SteamVR/PICO/VRChat, choose PC Avatar editing, install global
+Subsequent creator path: keep existing SteamVR/PICO/VRChat, choose PC Avatar editing, install global
 Unity 2022.3.22f1 (China 2022.3.22f1c1 fallback) following the
 [standalone deployment route](architecture/unity-deployment.md)
 (Hub optional), complete user licensing and necessary components, resolve actual SDK/MA dependencies, and open the test
@@ -135,7 +164,8 @@ the implementation slices and device/account/network research.
 
 ### Initial account guidance acceptance
 
-This is part of N1's first usable path; [product scope](product-boundary.md#account-onboarding-user-ruling-2026-09-30)
+The first play release uses the account row above; these rows also cover the subsequent creator
+route. [Product scope](product-boundary.md#account-onboarding-user-ruling-2026-09-30)
 owns the account and later-experiment boundaries. Use official pages in the isolated built-in
 browser, with explicit client/system-browser handoff when needed. Do not add an Auth Broker or
 a generic account/token manager before this path works.
@@ -302,6 +332,9 @@ N6 consolidates recovery; basic failures/retry cannot all be deferred from earli
 
 ## N7: Beta installer, regression, and illustrated user guide
 
+The first play release advances the ZIP, targeted regression and illustrated play-guide subset
+under its acceptance rows above. NSIS and complete N7 acceptance remain separate later work.
+
 | Deliverable | Required behavior and observable acceptance |
 | --- | --- |
 | Installer | Launch without a development checkout, developer commands, or hidden development-machine files |
@@ -359,6 +392,7 @@ do not turn documentation completeness, speculative coverage, or idle agent acti
 
 ## Document changelog
 
+- 3.8.0 (2026-10-03): define first-play-release acceptance for desktop/PICO USB/Wi-Fi, guidance, recovery and standalone ZIP; move creator completion behind that release.
 - 3.7.0 (2026-10-02): admit the development f1/c1 pair for the first creator deployment path, with global preference and Hub fallback after both editions fail.
 
 - 3.6.0 (2026-10-02): expand N1 acceptance to model-first official routes, installation activity,
@@ -377,7 +411,5 @@ do not turn documentation completeness, speculative coverage, or idle agent acti
 - 3.3.1 (2026-09-30): state the selected external-tool delivery path directly.
 - 3.3.0 (2026-09-30): add four-platform guided account acceptance and define Steam installation guidance and upstream external-connection acceptance for N2.
 - 3.2.0 (2026-09-29): add human/Agent reading contexts without changing N acceptance or version mapping.
-- 3.1.0 (2026-09-28): user ruling — the collab mechanism is frozen and unmaintained from the
-  N-sequence adoption; ordinary development is the only active entry; roles remain ownership hats.
 
 Earlier entries remain in Git history.

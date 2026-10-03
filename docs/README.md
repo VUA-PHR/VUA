@@ -1,8 +1,8 @@
 # Documentation guide
 
-> Document version: 1.0.1
+> Document version: 1.1.0
 > Status: Accepted
-> Updated: 2026-10-02
+> Updated: 2026-10-03
 > Scope: Current documentation routes for ordinary single-line N-sequence development
 
 ## Choose your reading context
@@ -52,6 +52,7 @@ AGENTS.md and CONTRIBUTING; then follow one route below instead of reading the e
 
 | Task | Read next | Add only when needed |
 | --- | --- | --- |
+| First desktop/PICO play release | [Accepted scope](product-boundary.md#first-play-release-user-ruling-2026-10-03), [release acceptance](development-outline.md#first-play-release-acceptance), [N1 implementation order](development/n1-delivery-plan.md#small-implementation-slices) | Standalone ZIP, desktop play, PICO USB/Wi-Fi, overlay guidance and focused recovery; creator/other-device work follows |
 | N1 deployment / N2 tools | [N1 delivery plan](development/n1-delivery-plan.md), [system map](architecture/system.md), [integration boundaries](architecture/integrations-and-overlays.md), [incremental evolution](architecture/evolution.md) | Device/model routes, installation activity, account/activation/network guide, Editor compatibility and relevant Gateway contract |
 | N3 production / N4 Recipe | [AMF and Unity](architecture/amf-unity.md), [Orchestrator](architecture/orchestrator.md) | Production/material/Recipe/SDK handoff contracts and real-run evidence |
 | N5 material audit/rework | [BDL](architecture/bdl.md), [AMF](architecture/amf-unity.md) | Current UI/Gateway/code/tests; account listing, selective download and import contracts |
@@ -92,6 +93,7 @@ remain local. Registry and document changes ride with the feature, not a separat
 
 ## Document changelog
 
+- 1.1.0 (2026-10-03): add the bounded first-play-release reading route before the wider N1/N2 route.
 - 1.0.1 (2026-10-02): drop the retained collab-era checker mention; the script and CI were removed
   with the mechanism's full retirement.
 - 1.0.0 (2026-10-01): register the documentation guide as a managed document.
